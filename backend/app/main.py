@@ -111,7 +111,10 @@ Include the token in the Authorization header: `Bearer <token>`
     app.include_router(weather.router, prefix="/api/v1")
     app.include_router(crops.router, prefix="/api/v1")
     app.include_router(diseases.router, prefix="/api/v1")
-    app.include_router(voice.router, prefix="/api/v1/voice", tags=["Voice"])
+    # Voice router already uses prefix="/voice". Mount it under /api/v1 and
+    # also keep legacy direct /voice paths for backward compatibility.
+    app.include_router(voice.router, prefix="/api/v1", tags=["Voice"])
+    app.include_router(voice.router, tags=["Voice"])
     app.include_router(voice_agent.router, prefix="/api/v1/voice", tags=["Voice Agent"])
     app.include_router(community.router, prefix="/api/v1")
     app.include_router(resource.router, prefix="/api/v1")

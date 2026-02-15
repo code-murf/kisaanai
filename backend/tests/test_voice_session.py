@@ -131,13 +131,21 @@ class TestVoiceSessionManager:
         except asyncio.CancelledError:
             pass
 
-    def test_register_request_nonexistent_session(self, manager):
+    @pytest.mark.asyncio
+    async def test_register_request_nonexistent_session(self, manager):
         """Test registering request for non-existent session fails."""
         async def mock_task():
-            pass
+            await asyncio.sleep(10)
 
         task = asyncio.create_task(mock_task())
-        result = manager.register_request("nonexistent-session", "req-001", task)
+        try:
+            result = manager.register_request("nonexistent-session", "req-001", task)
+        finally:
+            task.cancel()
+            try:
+                await task
+            except asyncio.CancelledError:
+                pass
 
         assert result is False
 
@@ -281,6 +289,7 @@ class TestVoiceSessionManager:
 
         # Cancel the request
         result = manager.cancel_session_request(session_id)
+        await asyncio.sleep(0.05)
 
         assert result is True
         assert task.cancelled() or task.done()
@@ -428,6 +437,7 @@ class TestVoiceSessionManager:
 
         # Run cleanup
         cleaned = manager.cleanup_expired_sessions()
+        await asyncio.sleep(0.05)
 
         assert cleaned == 1
         assert task_cancelled is True

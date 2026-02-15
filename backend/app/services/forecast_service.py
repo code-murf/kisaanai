@@ -243,8 +243,8 @@ class ForecastService:
             # Try to find closest available horizon
             available = list(self._forecasters.keys())
             if not available:
-                # No models loaded? Fallback to mock for demo
-                return self._generate_mock_forecast(commodity_id, mandi_id, horizon_days, include_explanation)
+                # No model loaded: caller should handle as insufficient forecast data
+                return None
             horizon_days = min(available, key=lambda x: abs(x - horizon_days))
         
         forecaster = self._forecasters[horizon_days]
@@ -253,14 +253,14 @@ class ForecastService:
         price_df = await self._get_historical_prices(commodity_id, mandi_id)
         
         if price_df.empty or len(price_df) < 30:
-            # Insufficient data for prediction, try mock if debug/demo
-            return self._generate_mock_forecast(commodity_id, mandi_id, horizon_days, include_explanation)
+            # Insufficient historical data to produce a reliable forecast
+            return None
         
         # Get commodity and mandi info
         commodity, mandi = await self._get_commodity_mandi_info(commodity_id, mandi_id)
         
         if not commodity or not mandi:
-            return self._generate_mock_forecast(commodity_id, mandi_id, horizon_days, include_explanation)
+            return None
         
         # Prepare features
         feature_engineer = FeatureEngineer()

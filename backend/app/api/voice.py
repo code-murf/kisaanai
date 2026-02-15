@@ -11,16 +11,37 @@ from typing import Optional
 import base64
 import uuid
 import asyncio
+import inspect
 import logging
 
 from app.services.ai_service import get_ai_service
 from app.core.voice_session import get_session_manager
 from app.models.user import User
+from app.database import get_db
 from app.api.auth import get_current_user
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from sqlalchemy.ext.asyncio import AsyncSession
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/voice", tags=["Voice"])
+security = HTTPBearer()
+
+
+async def _resolve_current_user(
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    db: AsyncSession = Depends(get_db),
+) -> User:
+    """
+    Resolve current user through app.api.auth.get_current_user.
+
+    This indirection keeps runtime behavior the same and allows tests to patch
+    app.api.voice.get_current_user directly.
+    """
+    result = get_current_user(credentials=credentials, db=db)
+    if inspect.isawaitable(result):
+        return await result
+    return result
 
 
 @router.post("/query")
@@ -130,7 +151,7 @@ async def voice_query(
 @router.post("/cancel")
 async def cancel_voice_request(
     session_id: str = Form(...),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(_resolve_current_user)
 ) -> dict:
     """
     Cancel an ongoing voice request (barge-in support).
@@ -176,7 +197,7 @@ async def cancel_voice_request(
 
 @router.post("/session")
 async def create_voice_session(
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(_resolve_current_user)
 ) -> dict:
     """
     Create a new voice session.
@@ -205,7 +226,7 @@ async def create_voice_session(
 @router.delete("/session/{session_id}")
 async def end_voice_session(
     session_id: str,
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(_resolve_current_user)
 ) -> dict:
     """
     End a voice session and cancel any active requests.

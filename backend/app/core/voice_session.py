@@ -11,6 +11,7 @@ import asyncio
 from datetime import datetime, timedelta
 import uuid
 import logging
+from app.config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -237,7 +238,6 @@ def get_session_manager() -> VoiceSessionManager:
     """
     global _session_manager
     if _session_manager is None:
-        from app.config import settings
         timeout = getattr(settings, 'VOICE_SESSION_TIMEOUT', 300)
         _session_manager = VoiceSessionManager(session_timeout=timeout)
         logger.info(f"Initialized voice session manager with {timeout}s timeout")

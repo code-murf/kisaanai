@@ -285,35 +285,41 @@ class TestVoiceCancelEndpoint:
 
         # Start a voice query (will be slow)
         slow_ai_service = MagicMock()
-        slow_ai_service.transcribe_audio = AsyncMock(side_effect=lambda *args: asyncio.sleep(10))
+
+        async def slow_transcribe(*args, **kwargs):
+            await asyncio.sleep(10)
+            return "slow query"
+
+        slow_ai_service.transcribe_audio = AsyncMock(side_effect=slow_transcribe)
         slow_ai_service.process_voice_query = AsyncMock(return_value={"response": "response"})
         slow_ai_service.text_to_speech = AsyncMock(return_value="audio")
 
-        query_task = asyncio.create_task(
-            client.post(
-                "/voice/query",
-                files={"file": ("test.wav", mock_audio_file, "audio/wav")},
-                data={"session_id": session_id}
-            )
-        )
-
-        # Wait a bit for the request to start
-        await asyncio.sleep(0.1)
-
-        # Cancel the request
-        with patch("app.api.voice.get_current_user", return_value=mock_user):
-            cancel_response = await client.post(
-                "/voice/cancel",
-                data={"session_id": session_id},
-                headers=auth_headers
+        with patch("app.api.voice.get_ai_service", return_value=slow_ai_service):
+            query_task = asyncio.create_task(
+                client.post(
+                    "/voice/query",
+                    files={"file": ("test.wav", io.BytesIO(mock_audio_file.getvalue()), "audio/wav")},
+                    data={"session_id": session_id}
+                )
             )
 
-        assert cancel_response.status_code == 200
-        data = cancel_response.json()
-        assert data["cancelled"] is True
+            # Wait a bit for the request to start
+            await asyncio.sleep(0.1)
 
-        # Cancel the hanging query task
-        query_task.cancel()
+            # Cancel the request
+            with patch("app.api.voice.get_current_user", return_value=mock_user):
+                cancel_response = await client.post(
+                    "/voice/cancel",
+                    data={"session_id": session_id},
+                    headers=auth_headers
+                )
+
+            assert cancel_response.status_code == 200
+            data = cancel_response.json()
+            assert data["cancelled"] is True
+
+            # Cancel the hanging query task
+            query_task.cancel()
 
 
 class TestVoiceBargeIn:
@@ -351,27 +357,29 @@ class TestVoiceBargeIn:
         slow_ai_service.process_voice_query = AsyncMock(return_value={"response": "first response"})
         slow_ai_service.text_to_speech = AsyncMock(return_value="first audio")
 
-        first_query_task = asyncio.create_task(
-            client.post(
-                "/voice/query",
-                files={"file": ("test.wav", mock_audio_file, "audio/wav")},
-                data={"session_id": session_id}
-            )
-        )
-
-        # Wait for first query to start
-        await first_query_started.wait()
-
         # 3. Start second query (barge-in)
         fast_ai_service = MagicMock()
         fast_ai_service.transcribe_audio = AsyncMock(return_value="second query")
         fast_ai_service.process_voice_query = AsyncMock(return_value={"response": "second response"})
         fast_ai_service.text_to_speech = AsyncMock(return_value="second audio")
 
-        with patch("app.api.voice.get_ai_service", return_value=fast_ai_service):
+        audio_bytes = mock_audio_file.getvalue()
+
+        with patch("app.api.voice.get_ai_service", side_effect=[slow_ai_service, fast_ai_service]):
+            first_query_task = asyncio.create_task(
+                client.post(
+                    "/voice/query",
+                    files={"file": ("test.wav", io.BytesIO(audio_bytes), "audio/wav")},
+                    data={"session_id": session_id}
+                )
+            )
+
+            # Wait for first query to start
+            await first_query_started.wait()
+
             second_response = await client.post(
                 "/voice/query",
-                files={"file": ("test.wav", mock_audio_file, "audio/wav")},
+                files={"file": ("test.wav", io.BytesIO(audio_bytes), "audio/wav")},
                 data={"session_id": session_id}
             )
 
@@ -395,6 +403,7 @@ class TestVoiceBargeIn:
     async def test_rapid_barge_ins(self, client, mock_audio_file):
         """Test multiple rapid barge-ins in succession."""
         session_id = get_session_manager().create_session(user_id="test_user")
+        audio_bytes = mock_audio_file.getvalue()
 
         results = []
         cancellation_count = 0
@@ -411,7 +420,7 @@ class TestVoiceBargeIn:
                 with patch("app.api.voice.get_ai_service", return_value=ai_service):
                     response = await client.post(
                         "/voice/query",
-                        files={"file": ("test.wav", mock_audio_file, "audio/wav")},
+                        files={"file": ("test.wav", io.BytesIO(audio_bytes), "audio/wav")},
                         data={"session_id": session_id}
                     )
                     if response.status_code == 200:
@@ -543,30 +552,36 @@ class TestVoiceEndSessionEndpoint:
 
         # Start a slow request
         slow_ai_service = MagicMock()
-        slow_ai_service.transcribe_audio = AsyncMock(side_effect=lambda *args: asyncio.sleep(10))
+        
+        async def slow_transcribe(*args, **kwargs):
+            await asyncio.sleep(10)
+            return "slow query"
+        
+        slow_ai_service.transcribe_audio = AsyncMock(side_effect=slow_transcribe)
 
-        query_task = asyncio.create_task(
-            client.post(
-                "/voice/query",
-                files={"file": ("test.wav", mock_audio_file, "audio/wav")},
-                data={"session_id": session_id}
-            )
-        )
-
-        await asyncio.sleep(0.1)
-
-        # End the session
-        with patch("app.api.voice.get_current_user", return_value=mock_user):
-            end_response = await client.delete(
-                f"/voice/session/{session_id}",
-                headers=auth_headers
+        with patch("app.api.voice.get_ai_service", return_value=slow_ai_service):
+            query_task = asyncio.create_task(
+                client.post(
+                    "/voice/query",
+                    files={"file": ("test.wav", io.BytesIO(mock_audio_file.getvalue()), "audio/wav")},
+                    data={"session_id": session_id}
+                )
             )
 
-        assert end_response.status_code == 200
-        assert end_response.json()["ended"] is True
+            await asyncio.sleep(0.1)
 
-        # Cancel hanging task
-        query_task.cancel()
+            # End the session
+            with patch("app.api.voice.get_current_user", return_value=mock_user):
+                end_response = await client.delete(
+                    f"/voice/session/{session_id}",
+                    headers=auth_headers
+                )
+
+            assert end_response.status_code == 200
+            assert end_response.json()["ended"] is True
+
+            # Cancel hanging task
+            query_task.cancel()
 
 
 class TestVoiceAPIErrorHandling:
@@ -678,6 +693,7 @@ class TestVoiceAPIIntegration:
     async def test_concurrent_sessions_different_users(self, client, mock_audio_file):
         """Test concurrent sessions for different users."""
         results = []
+        audio_bytes = mock_audio_file.getvalue()
 
         async def user_session(user_id):
             # Create session for user
@@ -696,7 +712,7 @@ class TestVoiceAPIIntegration:
             with patch("app.api.voice.get_ai_service", return_value=mock_ai_service):
                 query_resp = await client.post(
                     "/voice/query",
-                    files={"file": ("test.wav", mock_audio_file, "audio/wav")},
+                    files={"file": ("test.wav", io.BytesIO(audio_bytes), "audio/wav")},
                     data={"session_id": session_id}
                 )
 

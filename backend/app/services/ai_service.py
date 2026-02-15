@@ -5,6 +5,7 @@ and natural language recommendations.
 """
 import aiohttp
 import logging
+import re
 from typing import Optional, List, Dict, Any
 
 from app.config import settings
@@ -119,45 +120,52 @@ class GroqAIService:
         Returns:
             Transcribed text or None
         """
-        url = "https://api.sarvam.ai/speech-to-text"
-        
-        # Create a new session for Sarvam as it needs different headers (multipart)
-        # and we don't want to mess up the Groq session headers
-        async with aiohttp.ClientSession() as session:
-            headers = {
-                "api-subscription-key": self.sarvam_api_key,
-            }
-            
-            # Handle WebM (common from browsers) by treating as OGG/Opus which Sarvam supports
-            # content_type 'audio/webm' -> 'audio/ogg' mapping might help if Sarvam checks mime
-            if content_type == 'audio/webm' or filename.endswith('.webm'):
-                filename = filename.replace('.webm', '.ogg')
-                content_type = 'audio/ogg'
-            
-            data = aiohttp.FormData()
-            data.add_field('file', audio_content, filename=filename, content_type=content_type)
-            data.add_field('model', 'saarika:v2.5')
-            # data.add_field('language_code', language_code) # Optional for v2.5
-            
-            try:
-                async with session.post(url, data=data, headers=headers) as response:
-                    # Log the request details for debugging
-                    # logger.info(f"Sent audio to Sarvam: {filename} ({content_type}) - {len(audio_content)} bytes")
-                    
-                    if response.status == 200:
-                        res_json = await response.json()
-                        return res_json.get("transcript")
-                    else:
-                        text = await response.text()
-                        logger.error(f"Sarvam STT Error: {response.status} - {text}")
-                        logger.info("Falling back to Groq Whisper...")
-                        return await self.transcribe_audio_groq(audio_content, filename, content_type)
-            except Exception as e:
-                logger.error(f"Sarvam STT Exception: {e}")
-                logger.info("Falling back to Groq Whisper...")
-                return await self.transcribe_audio_groq(audio_content, filename, content_type)
+        urls = [
+            "https://api.sarvam.ai/speech-to-text",          # Primary endpoint
+            "https://api.sarvam.ai/speech-to-text/process",  # Fallback for API variations
+        ]
 
-    async def transcribe_audio_groq(self, audio_content: bytes, filename: str, content_type: str) -> Optional[str]:
+        async with aiohttp.ClientSession() as session:
+            headers = {"api-subscription-key": self.sarvam_api_key}
+
+            if content_type == "audio/webm" or filename.endswith(".webm"):
+                filename = filename.replace(".webm", ".ogg")
+                content_type = "audio/ogg"
+
+            for url in urls:
+                data = aiohttp.FormData()
+                data.add_field("file", audio_content, filename=filename, content_type=content_type)
+                data.add_field("model", "saarika:v2.5")
+                data.add_field("language_code", self._normalize_sarvam_language(language_code))
+
+                try:
+                    async with session.post(url, data=data, headers=headers) as response:
+                        if response.status == 200:
+                            res_json = await response.json()
+                            transcript = (
+                                res_json.get("transcript")
+                                or res_json.get("text")
+                                or res_json.get("result")
+                            )
+                            if transcript:
+                                return transcript
+                            logger.error(f"Sarvam STT Empty transcript from {url}: {res_json}")
+                        else:
+                            text = await response.text()
+                            logger.error(f"Sarvam STT Error ({url}): {response.status} - {text}")
+                except Exception as e:
+                    logger.error(f"Sarvam STT Exception ({url}): {e}")
+
+        logger.info("Falling back to Groq Whisper...")
+        return await self.transcribe_audio_groq(audio_content, filename, content_type, language_code=language_code)
+
+    async def transcribe_audio_groq(
+        self,
+        audio_content: bytes,
+        filename: str,
+        content_type: str,
+        language_code: str = "hi-IN",
+    ) -> Optional[str]:
         """
         Transcribe audio using Groq Whisper (Fallback).
         """
@@ -171,9 +179,10 @@ class GroqAIService:
         
         async with aiohttp.ClientSession() as session:
             data = aiohttp.FormData()
-            data.add_field('file', audio_content, filename=filename, content_type=content_type)
-            data.add_field('model', 'whisper-large-v3')
-            data.add_field('response_format', 'json')
+            data.add_field("file", audio_content, filename=filename, content_type=content_type)
+            data.add_field("model", "whisper-large-v3-turbo")
+            data.add_field("response_format", "json")
+            data.add_field("language", self._normalize_groq_language(language_code))
             
             try:
                 async with session.post(url, data=data, headers=headers) as response:
@@ -200,17 +209,20 @@ class GroqAIService:
             Base64 encoded audio string or None
         """
         url = "https://api.sarvam.ai/text-to-speech"
-        
+
+        cleaned_text = self._clean_tts_text(text)
+        text_chunks = self._chunk_text(cleaned_text, max_len=450)
+        if not text_chunks:
+            return None
+
         payload = {
-            "inputs": [text],
-            "target_language_code": language_code,
-            "speaker": "meera", # Default speaker
-            "pitch": 0,
+            "inputs": text_chunks,
+            "target_language_code": self._normalize_sarvam_language(language_code),
+            "speaker": "aditya",
             "pace": 1.0,
-            "loudness": 1.5,
             "speech_sample_rate": 16000,
             "enable_preprocessing": True,
-            "model": "bulbul:v1"
+            "model": "bulbul:v3"
         }
         
         headers = {
@@ -225,6 +237,7 @@ class GroqAIService:
                         res_json = await response.json()
                         audios = res_json.get("audios", [])
                         if audios:
+                            # Return first chunk for compatibility with current API response format.
                             return audios[0]
                         return None
                     else:
@@ -375,11 +388,19 @@ Please provide diagnosis and treatment recommendations."""
         system_prompt = """You are a helpful agricultural assistant for Indian farmers.
 Respond in a conversational, easy-to-understand manner.
 Keep responses concise but informative.
+Keep your final answer under 120 words and avoid markdown formatting.
+When asked about platform usage/workflow, explicitly mention voice question,
+transcription, AI response, and audio playback steps.
 If the question is about:
 - Prices: Mention checking local mandi rates
 - Weather: Suggest checking weather forecasts
 - Diseases: Provide initial guidance but recommend expert consultation for serious issues
 - Government schemes: Provide general information but suggest visiting official sources
+ - Government scheme payment issues (DBT/PM-KISAN): give clear steps including
+   portal status check, eKYC/bank seeding verification, local agriculture office/CSC,
+   and helpline or email escalation.
+ - Resource optimization / water allocation: provide a practical day-wise
+   schedule with priorities and one adjustment rule based on weather/soil moisture.
 
 Always be respectful and helpful. Use simple language that farmers can understand."""
 
@@ -398,7 +419,7 @@ Always be respectful and helpful. Use simple language that farmers can understan
         response = await self.chat_completion(
             messages=[{"role": "user", "content": user_message}],
             temperature=0.7,
-            max_tokens=500,
+            max_tokens=220,
             system_prompt=system_prompt,
         )
         
@@ -525,3 +546,67 @@ def get_ai_service() -> GroqAIService:
     if _ai_service is None:
         _ai_service = GroqAIService()
     return _ai_service
+
+
+# Helper methods added to class via monkey-patch for minimal diff surface.
+def _normalize_sarvam_language(self: GroqAIService, language_code: str) -> str:
+    lang = (language_code or "hi-IN").strip()
+    if "-" not in lang:
+        if lang.lower() == "en":
+            return "en-IN"
+        return "hi-IN"
+    return lang
+
+
+def _normalize_groq_language(self: GroqAIService, language_code: str) -> str:
+    lang = (language_code or "hi-IN").strip().lower()
+    if lang.startswith("en"):
+        return "en"
+    return "hi"
+
+
+def _clean_tts_text(self: GroqAIService, text: str) -> str:
+    normalized = (text or "").strip()
+    # Remove markdown bullets/formatting for better TTS output.
+    normalized = re.sub(r"[*_`#>-]", " ", normalized)
+    normalized = re.sub(r"\s+", " ", normalized).strip()
+    return normalized
+
+
+def _chunk_text(self: GroqAIService, text: str, max_len: int = 450) -> List[str]:
+    if not text:
+        return []
+    if len(text) <= max_len:
+        return [text]
+
+    chunks: List[str] = []
+    current = ""
+    for sentence in re.split(r"(?<=[.!?])\s+", text):
+        if not sentence:
+            continue
+        candidate = f"{current} {sentence}".strip() if current else sentence
+        if len(candidate) <= max_len:
+            current = candidate
+            continue
+
+        if current:
+            chunks.append(current)
+            current = ""
+
+        if len(sentence) <= max_len:
+            current = sentence
+        else:
+            # Hard split very long sentence
+            start = 0
+            while start < len(sentence):
+                chunks.append(sentence[start:start + max_len])
+                start += max_len
+    if current:
+        chunks.append(current)
+    return chunks
+
+
+GroqAIService._normalize_sarvam_language = _normalize_sarvam_language  # type: ignore[attr-defined]
+GroqAIService._normalize_groq_language = _normalize_groq_language  # type: ignore[attr-defined]
+GroqAIService._clean_tts_text = _clean_tts_text  # type: ignore[attr-defined]
+GroqAIService._chunk_text = _chunk_text  # type: ignore[attr-defined]

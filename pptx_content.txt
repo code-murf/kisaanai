@@ -1,0 +1,60 @@
+
+--- Slide 1 ---
+Shape: Google Shape;55;p13 | Text: Team Name :
+  Paragraph: Team Name :
+Shape: Google Shape;56;p13 | Text: Problem Statement :
+  Paragraph: Problem Statement :
+Shape: Google Shape;57;p13 | Text: Team Leader Name :
+  Paragraph: Team Leader Name :
+
+--- Slide 2 ---
+Shape: Google Shape;63;p14 | Text: Brief about the Idea:
+  Paragraph: Brief about the Idea:
+
+--- Slide 3 ---
+Shape: Google Shape;69;p15 | Text: Your solution should be able to explain the following:
+How different is it from any of the other existing ideas?
+How will it be able to solve the problem?
+USP of the proposed solution
+
+  Paragraph: Your solution should be able to explain the following:
+  Paragraph: How different is it from any of the other existing ideas?
+  Paragraph: How will it be able to solve the problem?
+  Paragraph: USP of the proposed solution
+  Paragraph: 
+
+--- Slide 4 ---
+Shape: Google Shape;75;p16 | Text: List of features offered by the solution
+It is always better to add a few visual representations (drawings/sketches/illustrations etc.) to your presentation, it adds to the power through which it reaches the audience.
+  Paragraph: List of features offered by the solution
+  Paragraph: It is always better to add a few visual representations (drawings/sketches/illustrations etc.) to your presentation, it adds to the power through which it reaches the audience.
+
+--- Slide 5 ---
+Shape: Google Shape;81;p17 | Text: Process flow diagram or Use-case diagram
+Add a flow diagram or a use case diagram or an architecture diagram.
+  Paragraph: Process flow diagram or Use-case diagram
+  Paragraph: Add a flow diagram or a use case diagram or an architecture diagram.
+
+--- Slide 6 ---
+Shape: Google Shape;87;p18 | Text: Wireframes/Mock diagrams of the proposed solution (optional)
+
+  Paragraph: Wireframes/Mock diagrams of the proposed solution (optional)
+  Paragraph: 
+
+--- Slide 7 ---
+Shape: Google Shape;93;p19 | Text: Architecture diagram of the proposed solution:
+  Paragraph: Architecture diagram of the proposed solution:
+
+--- Slide 8 ---
+Shape: Google Shape;99;p20 | Text: Technologies to be used in the solution:
+  Paragraph: Technologies to be used in the solution:
+
+--- Slide 9 ---
+Shape: Google Shape;105;p21 | Text: Estimated implementation cost (optional):
+  Paragraph: Estimated implementation cost (optional):
+
+--- Slide 10 ---
+Shape: Google Shape;111;p22 | Text: Add as per the requirements for the hackathon:
+  Paragraph: Add as per the requirements for the hackathon:
+
+--- Slide 11 ---
