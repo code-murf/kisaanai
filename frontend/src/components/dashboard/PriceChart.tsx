@@ -33,7 +33,7 @@ export function PriceChart({ commodityId = 2 }: PriceChartProps) {
     async function fetchData() {
       try {
         setLoading(true)
-        const res = await fetch(`http://localhost:8000/api/v1/prices/trend/${commodityId}?days=7`)
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/v1/prices/trend/${commodityId}?days=7`)
         if (!res.ok) throw new Error("Failed to fetch")
         const json = await res.json()
         

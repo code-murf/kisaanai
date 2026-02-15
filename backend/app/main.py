@@ -11,7 +11,7 @@ from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
 
 from app.config import settings
-from app.api import auth, commodities, mandis, prices, forecasts, routing, webhooks, weather, crops, diseases, voice, voice_agent, community, resource
+from app.api import auth, commodities, mandis, prices, forecasts, routing, webhooks, weather, crops, diseases, voice, voice_agent, community, resource, news
 from app.schemas import ErrorDetail
 
 logger = logging.getLogger(__name__)
@@ -118,6 +118,7 @@ Include the token in the Authorization header: `Bearer <token>`
     app.include_router(voice_agent.router, prefix="/api/v1/voice", tags=["Voice Agent"])
     app.include_router(community.router, prefix="/api/v1")
     app.include_router(resource.router, prefix="/api/v1")
+    app.include_router(news.router, prefix="/api/v1", tags=["News"])
     app.include_router(webhooks.router)  # Webhooks at /webhooks (no version prefix for external services)
     
     # Exception handlers

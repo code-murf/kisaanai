@@ -26,7 +26,8 @@ export default function NewsPage() {
   useEffect(() => {
     const fetchNews = async () => {
       try {
-        const response = await fetch('http://localhost:8000/api/news', { cache: 'no-store' });
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/news`, { cache: 'no-store' });
+
         if (!response.ok) {
           throw new Error('Failed to fetch news');
         }
@@ -42,6 +43,17 @@ export default function NewsPage() {
 
     fetchNews();
   }, []);
+
+  const getIcon = (category: string) => {
+    switch(category) {
+      case 'Market Trend': return TrendingUp;
+      case 'Weather Alert': return CloudRain;
+      case 'Policy': return FileText;
+      default: return Newspaper;
+    }
+  };
+
+
 
   const getItemClassName = (idx: number) => {
     if (idx === 1) return "col-span-3 lg:col-span-2 row-span-2 rounded-none border-neutral-800";

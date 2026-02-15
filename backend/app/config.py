@@ -65,14 +65,28 @@ class Settings(BaseSettings):
     MINIO_ACCESS_KEY: str = "minioadmin"
     MINIO_SECRET_KEY: str = "minioadmin"
     MINIO_BUCKET: str = "agri-data"
+    MINIO_BUCKET: str = "agri-data"
     MINIO_SECURE: bool = False
+
+    # Supabase (Optional)
+    SUPABASE_URL: Optional[str] = None
+    SUPABASE_KEY: Optional[str] = None
+    
+    # Hugging Face
+    HF_TOKEN: Optional[str] = None
     
     # Rate Limiting
     RATE_LIMIT_REQUESTS: int = 100
     RATE_LIMIT_PERIOD_SECONDS: int = 60
     
     # CORS
-    CORS_ORIGINS: list[str] = ["http://localhost:3000", "http://localhost:5173", "http://localhost:3003"]
+    CORS_ORIGINS: list[str] = [
+        "http://localhost:3000", 
+        "http://localhost:5173", 
+        "http://localhost:3003",
+        "https://kisaanai.vercel.app",
+        "https://*.vercel.app"
+    ]
     
     # AI/ML Settings
     GROQ_API_KEY: str = ""

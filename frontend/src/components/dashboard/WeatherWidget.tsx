@@ -28,7 +28,7 @@ export function WeatherWidget() {
     // In a real app, use React Query and proper API client
     const fetchWeather = async () => {
       try {
-        const res = await fetch("http://localhost:8000/api/v1/weather/forecast?lat=28.7041&lon=77.1025&days=14")
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/v1/weather/forecast?lat=28.7041&lon=77.1025&days=14`)
         if (!res.ok) throw new Error("Failed to fetch weather data")
         const data = await res.json()
         setForecasts(data)

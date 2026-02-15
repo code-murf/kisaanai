@@ -126,7 +126,7 @@ export function VoiceAssistant() {
       formData.append("file", audioBlob, `recording.${ext}`)
       formData.append("language", "hi-IN") 
 
-      const res = await fetch("http://localhost:8000/api/v1/voice/query", {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/v1/voice/query`, {
         method: "POST",
         body: formData,
       })

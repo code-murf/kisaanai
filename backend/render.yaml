@@ -1,0 +1,34 @@
+services:
+  - type: web
+    name: kisaanai-backend
+    env: python
+    region: singapore
+    plan: starter
+    branch: main
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: DATABASE_URL
+        value: postgresql://postgres:postgres@db.yjdmobzdaeznstzeinod.supabase.co:5432/postgres
+      - key: SUPABASE_URL
+        value: https://yjdmobzdaeznstzeinod.supabase.co
+      - key: SUPABASE_ANON_KEY
+        value: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlqZG1vYnpkYWV6bnN0emVpbm9kIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAzMjIzMTksImV4cCI6MjA4NTg5ODMxOX0.OyRKsxgf2Z6nz3xi-AgxWhXoyFwctgIlHeDBWv5GJMQ
+      - key: DEBUG
+        value: False
+      - key: GROQ_API_KEY
+        value: YOUR_GROQ_API_KEY_HERE
+      - key: GROQ_MODEL
+        value: llama-3.3-70b-versatile
+      - key: SARVAM_API_KEY
+        value: YOUR_SARVAM_API_KEY_HERE
+      - key: ELEVENLABS_API_KEY
+        value: YOUR_ELEVENLABS_API_KEY_HERE
+      - key: ELEVENLABS_AGENT_ID
+        value: YOUR_ELEVENLABS_AGENT_ID_HERE
+      - key: HUGGINGFACE_TOKEN
+        value: YOUR_HUGGINGFACE_TOKEN_HERE
+      - key: CORS_ORIGINS
+        value: https://kisaanai.vercel.app,http://localhost:3000

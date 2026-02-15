@@ -38,7 +38,7 @@ export function CropDoctor() {
         location: "Delhi"
       })
       
-      const res = await fetch(`http://localhost:8000/api/v1/crops/recommend?${query}`)
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/v1/crops/recommend?${query}`)
       if (!res.ok) throw new Error("Failed to fetch")
       const data = await res.json()
       setRecommendations(data)
@@ -74,7 +74,7 @@ export function CropDoctor() {
         const formData = new FormData()
         formData.append("file", selectedFile)
 
-        const res = await fetch("http://localhost:8000/api/v1/diseases/diagnose", {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/v1/diseases/diagnose`, {
             method: "POST",
             body: formData
         })
