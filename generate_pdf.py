@@ -30,7 +30,7 @@ import os
 # ... imports ...
 
 slides = [
-    ("Introduction", "Team Name: Antigravity AI\nProblem: Information Asymmetry & Market Inefficiency\nLeader: KisaanAI Team Lead"),
+    ("Introduction", "Team Name: KisaanAi\nProblem: Information Asymmetry & Market Inefficiency\nLeader: KisaanAI Team Lead"),
     ("Brief Idea", "KisaanAI is a voice-first, AI-powered platform that empowers farmers with real-time mandi prices, weather forecasts, and crop advisory services in their local language. It bridges the information gap, enabling data-driven decisions for better profitability."),
     ("Proposed Solution & USP", "1. Voice-First Interface: Breaks literacy barriers using Bhashini AI.\n2. Predictive Intelligence: 7-day price forecasts using Temporal Fusion Transformers.\n3. Smart Routing: Calculates Net Profit (Price - Transport Cost).\n4. Explainable AI: Provides reasoning to build trust."),
     ("Key Features", "- KisaanCredit (New): AI-based credit scoring using yield forecasts for instant micro-loans.\n- AI Price Forecasting: Accurate predictions for Potato, Onion, Tomato.\n- Voice Assistant: 'Bolo aur Jaano' interface.\n- Smart Routing: Real-time transport cost calculation.\n- WhatsApp Bot: Low-bandwidth access.\n- Crop Doctor: Image-based disease detection."),

@@ -146,6 +146,20 @@ async def voice_query(
             status_code=499,  # Client Closed Request
             detail="Request cancelled due to barge-in"
         )
+    except asyncio.TimeoutError:
+        logger.exception("Voice request %s timed out", request_id)
+        raise HTTPException(
+            status_code=status.HTTP_504_GATEWAY_TIMEOUT,
+            detail="Voice processing timed out",
+        )
+    except HTTPException:
+        raise
+    except Exception:
+        logger.exception("Voice request %s failed unexpectedly", request_id)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Voice processing failed",
+        )
 
 
 @router.post("/cancel")

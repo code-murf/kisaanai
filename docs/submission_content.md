@@ -1,13 +1,13 @@
 HACKATHON IDEA SUBMISSION: KISAANAI
 
 Theme: AWS AI for Bharat
-Team Name: Antigravity AI
+Team Name: KisaanAi
 
 SLIDE 1: INTRODUCTION
 
 Project Name: KisaanAI
 Tagline: Bridging the Information Gap for Indian Farmers with AI
-Team: Antigravity AI (10 Members)
+Team: KisaanAi (10 Members)
 
 
 SLIDE 2: PROBLEM STATEMENT

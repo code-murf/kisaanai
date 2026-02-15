@@ -341,7 +341,7 @@ class TestVoiceBargeIn:
         first_query_started = asyncio.Event()
         first_query_cancelled = False
 
-        async def slow_transcribe(*args):
+        async def slow_transcribe(*args, **kwargs):
             first_query_started.set()
             try:
                 await asyncio.sleep(10)  # Simulate slow processing
