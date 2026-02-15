@@ -33,6 +33,11 @@ nul
 .env.production.local
 SECRETS.md
 
+# SSH Keys
+*.pem
+*.key
+kisaanai.pem
+
 # IDEs
 .vscode/
 .idea/
