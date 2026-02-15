@@ -1,14 +1,21 @@
 import type { NextConfig } from "next";
+import path from "path";
 
 const nextConfig: NextConfig = {
-  /* config options here */
-  output: 'standalone', // For Docker deployment
-  experimental: {
-    // reactCompiler: true,
-  },
-  // Allow images from external sources
+  output: "standalone",
+  outputFileTracingRoot: path.join(__dirname, ".."),
+  /* experimental: {
+    webpackBuildWorker: false,
+    workerThreads: true,
+    cpus: 1,
+  }, */
   images: {
-    domains: ['yjdmobzdaeznstzeinod.supabase.co'],
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "yjdmobzdaeznstzeinod.supabase.co",
+      },
+    ],
   },
 };
 
