@@ -2,7 +2,7 @@
 # Tests all endpoints and functionality
 
 $BASE_URL = "http://13.53.186.103"
-$API_URL = "$BASE_URL:8000"
+$API_URL = "http://13.53.186.103:8000"
 
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host "KisaanAI - Complete Feature Test" -ForegroundColor Cyan
