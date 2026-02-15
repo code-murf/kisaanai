@@ -1,0 +1,204 @@
+# Agri-Analytics Platform - Docker Compose Configuration
+# =====================================================
+# Multi-service deployment configuration for development and production
+#
+# Services:
+# - backend: FastAPI application
+# - db: PostgreSQL with PostGIS extension
+# - redis: Redis for caching and rate limiting
+# - worker: Prefect worker for background tasks
+# - scheduler: Prefect scheduler for cron jobs
+
+version: "3.8"
+
+services:
+  # ============================================
+  # PostgreSQL Database with PostGIS
+  # ============================================
+  db:
+    image: postgis/postgis:15-3.3-alpine
+    container_name: agri-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USER:-agri_user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-agri_password}
+      POSTGRES_DB: ${DB_NAME:-agri_analytics}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql:ro
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-agri_user} -d ${DB_NAME:-agri_analytics}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - agri-network
+
+  # ============================================
+  # Redis Cache
+  # ============================================
+  redis:
+    image: redis:7-alpine
+    container_name: agri-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data:/data
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - agri-network
+
+  # ============================================
+  # FastAPI Backend Application
+  # ============================================
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      target: ${BUILD_TARGET:-production}
+    container_name: agri-backend
+    restart: unless-stopped
+    environment:
+      # Database
+      DATABASE_URL: postgresql+asyncpg://${DB_USER:-agri_user}:${DB_PASSWORD:-agri_password}@db:5432/${DB_NAME:-agri_analytics}
+      # Redis
+      REDIS_URL: redis://redis:6379/0
+      # Security
+      SECRET_KEY: ${SECRET_KEY:-your-secret-key-change-in-production}
+      ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES:-30}
+      REFRESH_TOKEN_EXPIRE_DAYS: ${REFRESH_TOKEN_EXPIRE_DAYS:-7}
+      # API Keys
+      TWILIO_ACCOUNT_SID: ${TWILIO_ACCOUNT_SID:-}
+      TWILIO_AUTH_TOKEN: ${TWILIO_AUTH_TOKEN:-}
+      TWILIO_PHONE_NUMBER: ${TWILIO_PHONE_NUMBER:-}
+      BHASHINI_API_KEY: ${BHASHINI_API_KEY:-}
+      BHASHINI_USER_ID: ${BHASHINI_USER_ID:-}
+      # ML Settings
+      MODEL_PATH: /app/models
+      DATA_PATH: /app/data
+      # App Settings
+      DEBUG: ${DEBUG:-false}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000}
+    volumes:
+      - ./backend/app:/app/app:ro
+      - ./backend/models:/app/models
+      - ./backend/data:/app/data
+      - ./backend/logs:/app/logs
+    ports:
+      - "${API_PORT:-8000}:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - agri-network
+
+  # ============================================
+  # Prefect Worker for Background Tasks
+  # ============================================
+  worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      target: production
+    container_name: agri-worker
+    restart: unless-stopped
+    command: python -m prefect worker start -p default-agent-pool
+    environment:
+      # Database
+      DATABASE_URL: postgresql+asyncpg://${DB_USER:-agri_user}:${DB_PASSWORD:-agri_password}@db:5432/${DB_NAME:-agri_analytics}
+      # Redis
+      REDIS_URL: redis://redis:6379/0
+      # Prefect
+      PREFECT_API_URL: ${PREFECT_API_URL:-http://prefect-server:4200/api}
+      # App Settings
+      MODEL_PATH: /app/models
+      DATA_PATH: /app/data
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+    volumes:
+      - ./backend/models:/app/models
+      - ./backend/data:/app/data
+      - ./backend/logs:/app/logs
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - agri-network
+    profiles:
+      - production
+
+  # ============================================
+  # Prefect Server (Optional - for orchestration)
+  # ============================================
+  prefect-server:
+    image: prefecthq/prefect:2-python3.11
+    container_name: agri-prefect-server
+    restart: unless-stopped
+    command: prefect server start --host 0.0.0.0
+    environment:
+      PREFECT_UI_API_URL: http://localhost:4200/api
+    ports:
+      - "4200:4200"
+    volumes:
+      - prefect_data:/root/.prefect
+    networks:
+      - agri-network
+    profiles:
+      - production
+
+  # ============================================
+  # Nginx Reverse Proxy (Production)
+  # ============================================
+  nginx:
+    image: nginx:alpine
+    container_name: agri-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - backend
+    networks:
+      - agri-network
+    profiles:
+      - production
+
+# ============================================
+# Networks
+# ============================================
+networks:
+  agri-network:
+    driver: bridge
+    name: agri-network
+
+# ============================================
+# Volumes
+# ============================================
+volumes:
+  postgres_data:
+    name: agri-postgres-data
+  redis_data:
+    name: agri-redis-data
+  prefect_data:
+    name: agri-prefect-data

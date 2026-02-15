@@ -1,0 +1,52 @@
+{
+  "expo": {
+    "name": "AgriBharat",
+    "slug": "agribharat",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#22c55e"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.agribharat.app"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#22c55e"
+      },
+      "package": "com.agribharat.app",
+      "permissions": [
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION",
+        "RECORD_AUDIO",
+        "INTERNET",
+        "VIBRATE"
+      ]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Allow AgriBharat to access your location for finding nearby mandis.",
+          "locationWhenInUsePermission": "Allow AgriBharat to access your location for finding nearby mandis."
+        }
+      ]
+    ],
+    "extra": {
+      "API_URL": "http://192.168.1.100:8000/api/v1",
+      "GROQ_API_KEY": "set_via_env",
+      "SARVAM_API_KEY": "set_via_env",
+      "ELEVENLABS_API_KEY": "set_via_env"
+    }
+  }
+}
