@@ -22,8 +22,8 @@ export function MagicDashboard() {
       description: "Locate the nearest mandi with the highest profit margin.",
       href: "/mandi",
       cta: "View Map",
-      background: <div className="absolute inset-0 bg-gradient-to-br from-emerald-100/50 via-emerald-50/30 to-transparent opacity-100" />,
-      className: "col-span-3 md:col-span-1 lg:col-span-1 border-emerald-100 bg-emerald-50/30 dark:bg-emerald-950/20 dark:border-emerald-900/50",
+      background: <div className="row-span-1 rounded-xl border-none bg-gradient-to-br from-emerald-100 to-emerald-50 dark:from-emerald-900/20 dark:to-emerald-900/10 shadow-sm" />,
+      className: "col-span-3 md:col-span-1 lg:col-span-1 border-emerald-100 bg-emerald-50/30 dark:bg-emerald-950/20 dark:border-emerald-900/50", // This line is kept as per original, assuming the instruction was only for `background`
       iconClassName: "text-emerald-700 dark:text-emerald-400",
     },
     {
@@ -32,8 +32,8 @@ export function MagicDashboard() {
       description: "AI-powered predictions.",
       href: "/charts",
       cta: "See Trends",
-      background: <div className="absolute inset-0 bg-gradient-to-br from-indigo-100/50 via-indigo-50/30 to-transparent opacity-100" />,
-      className: "col-span-3 md:col-span-2 lg:col-span-1 border-indigo-100 bg-indigo-50/30 dark:bg-indigo-950/20 dark:border-indigo-900/50",
+      background: <div className="col-span-3 row-span-1 rounded-xl border-none bg-gradient-to-br from-indigo-100 to-indigo-50 dark:from-indigo-900/20 dark:to-indigo-900/10 shadow-sm" />,
+      className: "col-span-3 md:col-span-2 lg:col-span-1 border-indigo-100 bg-indigo-50/30 dark:bg-indigo-950/20 dark:border-indigo-900/50", // This line is kept as per original
       iconClassName: "text-indigo-700 dark:text-indigo-400",
     },
     {
@@ -42,8 +42,8 @@ export function MagicDashboard() {
       description: "Ask in your language.",
       href: "/voice",
       cta: "Speak Now",
-      background: <div className="absolute inset-0 bg-gradient-to-br from-rose-100/50 via-rose-50/30 to-transparent opacity-100" />,
-      className: "col-span-3 md:col-span-2 lg:col-span-1 border-rose-100 bg-rose-50/30 dark:bg-rose-950/20 dark:border-rose-900/50",
+      background: <div className="col-span-2 row-span-1 rounded-xl border-none bg-gradient-to-br from-blue-100 to-blue-50 dark:from-blue-900/20 dark:to-blue-900/10 shadow-sm" />,
+      className: "col-span-3 md:col-span-2 lg:col-span-1 border-rose-100 bg-rose-50/30 dark:bg-rose-950/20 dark:border-rose-900/50", // This line is kept as per original
       iconClassName: "text-rose-700 dark:text-rose-400",
     },
     {
@@ -52,8 +52,8 @@ export function MagicDashboard() {
       description: "Disease detection & advisory.",
       href: "/doctor",
       cta: "Diagnose",
-      background: <div className="absolute inset-0 bg-gradient-to-br from-amber-100/50 via-amber-50/30 to-transparent opacity-100" />,
-      className: "col-span-3 md:col-span-1 lg:col-span-2 border-amber-100 bg-amber-50/30 dark:bg-amber-950/20 dark:border-amber-900/50",
+      background: <div className="col-span-1 row-span-1 rounded-xl border-none bg-gradient-to-br from-amber-100 to-amber-50 dark:from-amber-900/20 dark:to-amber-900/10 shadow-sm" />,
+      className: "col-span-3 md:col-span-1 lg:col-span-2 border-amber-100 bg-amber-50/30 dark:bg-amber-950/20 dark:border-amber-900/50", // This line is kept as per original
       iconClassName: "text-amber-700 dark:text-amber-400",
     },
     {
@@ -137,8 +137,8 @@ export function MagicDashboard() {
             </div>
           ))}
         </Marquee>
-        <div className="pointer-events-none absolute inset-y-0 left-0 w-1/4 bg-gradient-to-r from-white dark:from-neutral-950"></div>
-        <div className="pointer-events-none absolute inset-y-0 right-0 w-1/4 bg-gradient-to-l from-white dark:from-neutral-950"></div>
+        <div className="pointer-events-none absolute inset-y-0 left-0 w-1/3 bg-gradient-to-r from-white dark:from-background"></div>
+        <div className="pointer-events-none absolute inset-y-0 right-0 w-1/3 bg-gradient-to-l from-white dark:from-background"></div>
       </div>
     </motion.div>
   );

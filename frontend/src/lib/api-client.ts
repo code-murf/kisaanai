@@ -9,8 +9,8 @@ type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE"
 
 interface RequestConfig {
   method: HttpMethod
-  body?: any
-  headers?: Record<string, string>
+  body?: Record<string, unknown> | null;
+  headers?: Record<string, string>;
   requiresAuth?: boolean
 }
 
@@ -88,7 +88,7 @@ class ApiClient {
       }
 
       return data
-    } catch (error) {
+    } catch (error: unknown) {
       if (error instanceof ApiError) {
         throw error
       }

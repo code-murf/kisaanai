@@ -21,7 +21,6 @@ interface WeatherForecast {
 export function WeatherWidget() {
   const [forecasts, setForecasts] = useState<WeatherForecast[]>([])
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     // Fetch weather data
