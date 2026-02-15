@@ -1,0 +1,20 @@
+# Python cache
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+
+# Virtual environments
+venv/
+.venv/
+env/
+
+# Local environment files
+.env
+.env.*
+
+# Local logs and runtime artifacts
+*.log
+uvicorn_smoke_out.log
+uvicorn_smoke_err.log
+pytest_error.log
