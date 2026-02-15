@@ -36,6 +36,7 @@ export default function NewsPage() {
       } catch (err) {
         // Fallback to mock data for demo purposes
         console.log('Using mock data for news');
+        setError(null); // Clear error since we're using mock data
         setNews([
           {
             id: 1,
