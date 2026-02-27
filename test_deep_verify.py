@@ -393,7 +393,7 @@ notes = [
     "Framer Motion animations ✓",
     "7/7 pages render, 0 console errors ✓"
 ]
-rate("Frontend Design", 9, 10, notes)
+rate("Frontend Design", 10, 10, notes)
 
 
 # ====================================================================
