@@ -1,10 +1,9 @@
-
-"use client"
+﻿"use client"
 
 import { useEffect, useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
-import { Sun, Cloud, CloudRain, Droplets, Wind, AlertTriangle } from "lucide-react"
+import { Sun, Cloud, CloudRain, Droplets, AlertTriangle, AlertCircle } from "lucide-react"
 import { format } from "date-fns"
 
 interface WeatherForecast {
@@ -21,35 +20,23 @@ interface WeatherForecast {
 export function WeatherWidget() {
   const [forecasts, setForecasts] = useState<WeatherForecast[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    // Fetch weather data
-    // In a real app, use React Query and proper API client
     const fetchWeather = async () => {
       try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/v1/weather/forecast?lat=28.7041&lon=77.1025&days=14`)
-        if (!res.ok) throw new Error("Failed to fetch weather data")
+        const res = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/api/v1/weather/forecast?lat=28.7041&lon=77.1025&days=14`
+        )
+        if (!res.ok) {
+          throw new Error(`Weather API error (${res.status})`)
+        }
         const data = await res.json()
         setForecasts(data)
+        setError(null)
       } catch (err) {
-            console.error(err)
-            // Fallback mock data for demo if API fails (e.g. if backend not running/cors issues)
-             const mockData: WeatherForecast[] = Array.from({ length: 14 }).map((_, i) => {
-                const date = new Date()
-                date.setDate(date.getDate() + i)
-                return {
-                    date: date.toISOString().split('T')[0],
-                    temp_min: 20 + Math.random() * 5,
-                    temp_max: 30 + Math.random() * 5,
-                    rainfall_mm: Math.random() > 0.7 ? Math.random() * 10 : 0,
-                    humidity_pct: 50 + Math.random() * 20,
-                    condition: Math.random() > 0.7 ? "rain" : "sunny",
-                    advisory: "Conditions match fallback mock.",
-                    icon: Math.random() > 0.7 ? "cloud-rain" : "sun"
-                }
-            })
-            setForecasts(mockData)
-            // setError("Using offline mode") 
+        setError(err instanceof Error ? err.message : "Failed to load weather data")
+        setForecasts([])
       } finally {
         setLoading(false)
       }
@@ -60,14 +47,34 @@ export function WeatherWidget() {
 
   if (loading) return <div className="h-48 w-full bg-muted animate-pulse rounded-md" />
 
+  if (error) {
+    return (
+      <Card className="w-full shadow-sm">
+        <CardHeader>
+          <CardTitle className="text-lg font-bold flex items-center gap-2">
+            <AlertCircle className="h-5 w-5 text-red-500" />
+            Weather Unavailable
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-muted-foreground">{error}</p>
+        </CardContent>
+      </Card>
+    )
+  }
+
   const todayForecast = forecasts[0]
 
   const getIcon = (iconName: string) => {
     switch (iconName) {
-      case "sun": return <Sun className="h-6 w-6 text-yellow-500" />
-      case "cloud": return <Cloud className="h-6 w-6 text-gray-400" />
-      case "cloud-rain": return <CloudRain className="h-6 w-6 text-blue-500" />
-      default: return <Sun className="h-6 w-6 text-yellow-500" />
+      case "sun":
+        return <Sun className="h-6 w-6 text-yellow-500" />
+      case "cloud":
+        return <Cloud className="h-6 w-6 text-gray-400" />
+      case "cloud-rain":
+        return <CloudRain className="h-6 w-6 text-blue-500" />
+      default:
+        return <Sun className="h-6 w-6 text-yellow-500" />
     }
   }
 
@@ -80,10 +87,10 @@ export function WeatherWidget() {
             14-Day Weather & Advisory
           </CardTitle>
           {todayForecast && (
-             <div className="flex items-center gap-2 text-sm text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 px-3 py-1 rounded-full border border-amber-200 dark:border-amber-800/50">
-                <AlertTriangle className="h-4 w-4" />
-                <span className="font-medium">Advisory: {todayForecast.advisory}</span>
-             </div>
+            <div className="flex items-center gap-2 text-sm text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 px-3 py-1 rounded-full border border-amber-200 dark:border-amber-800/50">
+              <AlertTriangle className="h-4 w-4" />
+              <span className="font-medium">Advisory: {todayForecast.advisory}</span>
+            </div>
           )}
         </div>
       </CardHeader>
@@ -98,18 +105,18 @@ export function WeatherWidget() {
                 }`}
               >
                 <span className="text-xs font-medium text-muted-foreground mb-1">
-                    {format(new Date(day.date), "EEE, MMM d")}
+                  {format(new Date(day.date), "EEE, MMM d")}
                 </span>
                 <div className="my-2 p-2 bg-background/50 rounded-full shadow-sm ring-1 ring-inset ring-border">
-                    {getIcon(day.icon)}
+                  {getIcon(day.icon)}
                 </div>
                 <div className="flex items-baseline gap-1 mt-1">
-                    <span className="text-lg font-bold">{Math.round(day.temp_max)}°</span>
-                    <span className="text-xs text-muted-foreground">/ {Math.round(day.temp_min)}°</span>
+                  <span className="text-lg font-bold">{Math.round(day.temp_max)}°</span>
+                  <span className="text-xs text-muted-foreground">/ {Math.round(day.temp_min)}°</span>
                 </div>
                 <div className="flex items-center gap-1 mt-2 text-xs text-blue-500 dark:text-blue-400 font-medium">
-                    <Droplets className="h-3 w-3" />
-                    <span>{Number(day.rainfall_mm).toFixed(1)}mm</span>
+                  <Droplets className="h-3 w-3" />
+                  <span>{Number(day.rainfall_mm).toFixed(1)}mm</span>
                 </div>
               </div>
             ))}
@@ -120,3 +127,4 @@ export function WeatherWidget() {
     </Card>
   )
 }
+

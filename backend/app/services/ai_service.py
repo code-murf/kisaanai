@@ -199,7 +199,7 @@ class GroqAIService:
 
     async def text_to_speech(self, text: str, language_code: str = "hi-IN") -> Optional[str]:
         """
-        Convert text to speech using Sarvam AI.
+        Convert text to speech using Amazon Polly (primary) with Sarvam AI fallback.
         
         Args:
             text: Text to convert
@@ -208,9 +208,47 @@ class GroqAIService:
         Returns:
             Base64 encoded audio string or None
         """
+        cleaned_text = self._clean_tts_text(text)
+        if not cleaned_text:
+            return None
+
+        # --- Primary: Amazon Polly (realtime, free tier) ---
+        try:
+            from app.services.polly_service import polly_service
+            import asyncio
+
+            # Map language code for Polly
+            lang = (language_code or "hi-IN").strip()
+            polly_lang = "hi" if lang.startswith("hi") else "en"
+
+            # Run Polly (sync boto3) in executor to avoid blocking
+            loop = asyncio.get_event_loop()
+            result = await loop.run_in_executor(
+                None,
+                lambda: polly_service.synthesize(
+                    text=cleaned_text,
+                    language=polly_lang,
+                    output_format="mp3",
+                    engine="neural",
+                )
+            )
+
+            if result.get("success") and result.get("audio_base64"):
+                logger.info(f"Polly TTS success: {result.get('duration_ms')}ms, "
+                           f"{result.get('chars_used')} chars")
+                return result["audio_base64"]
+            else:
+                logger.warning(f"Polly TTS returned no audio: {result.get('error')}")
+        except Exception as e:
+            logger.warning(f"Polly TTS failed, falling back to Sarvam: {e}")
+
+        # --- Fallback: Sarvam AI ---
+        return await self._text_to_speech_sarvam(cleaned_text, language_code)
+
+    async def _text_to_speech_sarvam(self, cleaned_text: str, language_code: str = "hi-IN") -> Optional[str]:
+        """Fallback TTS using Sarvam AI."""
         url = "https://api.sarvam.ai/text-to-speech"
 
-        cleaned_text = self._clean_tts_text(text)
         text_chunks = self._chunk_text(cleaned_text, max_len=450)
         if not text_chunks:
             return None
@@ -218,11 +256,11 @@ class GroqAIService:
         payload = {
             "inputs": text_chunks,
             "target_language_code": self._normalize_sarvam_language(language_code),
-            "speaker": "aditya",
+            "speaker": "anushka",
             "pace": 1.0,
             "speech_sample_rate": 16000,
             "enable_preprocessing": True,
-            "model": "bulbul:v3"
+            "model": "bulbul:v2"
         }
         
         headers = {
@@ -237,7 +275,6 @@ class GroqAIService:
                         res_json = await response.json()
                         audios = res_json.get("audios", [])
                         if audios:
-                            # Return first chunk for compatibility with current API response format.
                             return audios[0]
                         return None
                     else:
@@ -248,7 +285,6 @@ class GroqAIService:
                 logger.error(f"Sarvam TTS Exception: {e}")
                 return None
 
-    
     async def close(self):
         """Close the aiohttp session."""
         if self._session and not self._session.closed:

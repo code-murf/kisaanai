@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useState } from "react"
 import { User, MapPin, Bell, Globe, Shield, Moon, Sun, ChevronRight } from "lucide-react"
@@ -36,7 +36,7 @@ export default function SettingsPage() {
       title: "Preferences",
       icon: Globe,
       items: [
-        { label: "Language", value: language === "hi" ? "हिंदी (Hindi)" : "English", action: "Change", isLanguage: true },
+        { label: "Language", value: language === "hi" ? "à¤¹à¤¿à¤‚à¤¦à¥€ (Hindi)" : "English", action: "Change", isLanguage: true },
         { label: "Dark Mode", value: darkMode ? "Enabled" : "Disabled", action: "", isToggle: true },
         { label: "Default Commodity", value: "Potato (Jyoti)", action: "Change" },
       ],
@@ -108,7 +108,7 @@ export default function SettingsPage() {
               variant={language === "hi" ? "default" : "outline"}
               onClick={() => setLanguage("hi")}
             >
-              हिंदी
+              à¤¹à¤¿à¤‚à¤¦à¥€
             </Button>
             <Button
               size="sm"
@@ -186,9 +186,9 @@ export default function SettingsPage() {
       <Card className="bg-muted/50">
         <CardContent className="pt-6">
           <div className="text-center space-y-2">
-            <p className="font-medium">Agri-Analytics Platform</p>
+            <p className="font-medium">KisaanAI Platform</p>
             <p className="text-sm text-muted-foreground">Version 1.0.0</p>
-            <p className="text-xs text-muted-foreground">Made with ❤️ for Indian Farmers</p>
+            <p className="text-xs text-muted-foreground">Made with â¤ï¸ for Indian Farmers</p>
           </div>
         </CardContent>
       </Card>

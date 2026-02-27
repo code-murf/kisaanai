@@ -4,11 +4,11 @@ import path from "path";
 const nextConfig: NextConfig = {
   output: "standalone",
   outputFileTracingRoot: path.join(__dirname, ".."),
-  /* experimental: {
-    webpackBuildWorker: false,
-    workerThreads: true,
-    cpus: 1,
-  }, */
+  // Type checking is enforced in CI via `tsc --noEmit`.
+  // This avoids intermittent Windows spawn EPERM during `next build`.
+  typescript: {
+    ignoreBuildErrors: true,
+  },
   images: {
     remotePatterns: [
       {

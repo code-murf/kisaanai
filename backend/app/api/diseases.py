@@ -30,5 +30,7 @@ async def diagnose_plant(file: UploadFile = File(...)):
             treatment=prediction.treatment,
             severity=prediction.severity
         )
+    except RuntimeError as e:
+        raise HTTPException(status_code=503, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

@@ -87,7 +87,7 @@ export default function SettingsScreen() {
                   styles.languageButton,
                   selectedLanguage === lang.code && styles.languageButtonActive,
                 ]}
-                onPress={() => setSelectedLanguage(lang.code as 'hi' | 'en')}
+                onPress={() => setSelectedLanguage(lang.code as 'hi' | 'en' | 'pa')}
               >
                 <Text
                   style={[
@@ -148,7 +148,7 @@ export default function SettingsScreen() {
 
         {/* App Info */}
         <View style={styles.appInfo}>
-          <Text style={styles.appName}>Agri-Analytics Platform</Text>
+          <Text style={styles.appName}>KisaanAI Platform</Text>
           <Text style={styles.appVersion}>Version 1.0.0</Text>
           <Text style={styles.appTagline}>Made with ❤️ for Indian Farmers</Text>
         </View>

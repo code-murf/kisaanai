@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { TrendingUp, TrendingDown, Calendar, Download, Info } from "lucide-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -12,62 +12,203 @@ import {
   CartesianGrid,
   Legend,
   Line,
-  LineChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
 } from "recharts"
 
-// Mock data
-const priceHistoryData = [
-  { date: "Jan 01", price: 1180, min: 1150, max: 1210 },
-  { date: "Jan 02", price: 1195, min: 1170, max: 1220 },
-  { date: "Jan 03", price: 1180, min: 1155, max: 1205 },
-  { date: "Jan 04", price: 1210, min: 1180, max: 1240 },
-  { date: "Jan 05", price: 1230, min: 1200, max: 1260 },
-  { date: "Jan 06", price: 1240, min: 1210, max: 1270 },
-  { date: "Jan 07", price: 1240, min: 1220, max: 1260 },
-  { date: "Jan 08", price: 1255, min: 1230, max: 1280 },
-  { date: "Jan 09", price: 1240, min: 1210, max: 1270 },
-  { date: "Jan 10", price: 1260, min: 1230, max: 1290 },
-  { date: "Jan 11", price: 1275, min: 1240, max: 1310 },
-  { date: "Jan 12", price: 1280, min: 1250, max: 1310 },
-]
-
-const forecastData = [
-  { date: "Jan 12", price: 1280, lower: 1250, upper: 1310, type: "historical" },
-  { date: "Jan 13", price: 1290, lower: 1240, upper: 1340, type: "forecast" },
-  { date: "Jan 14", price: 1295, lower: 1230, upper: 1360, type: "forecast" },
-  { date: "Jan 15", price: 1285, lower: 1210, upper: 1360, type: "forecast" },
-  { date: "Jan 16", price: 1270, lower: 1180, upper: 1360, type: "forecast" },
-  { date: "Jan 17", price: 1260, lower: 1160, upper: 1360, type: "forecast" },
-  { date: "Jan 18", price: 1255, lower: 1140, upper: 1370, type: "forecast" },
-]
-
-const mandiComparisonData = [
-  { name: "Azadpur", price: 1240, arrival: 4500 },
-  { name: "Okhla", price: 1210, arrival: 3200 },
-  { name: "Ghazipur", price: 1260, arrival: 2800 },
-  { name: "Keshopur", price: 1230, arrival: 1900 },
-  { name: "Narela", price: 1195, arrival: 2400 },
-  { name: "Bahadurgarh", price: 1250, arrival: 1600 },
-]
-
 const timeRanges = [
-  { label: "7D", value: "7d" },
-  { label: "30D", value: "30d" },
-  { label: "90D", value: "90d" },
-  { label: "1Y", value: "1y" },
+  { label: "7D", value: "7d", days: 7 },
+  { label: "30D", value: "30d", days: 30 },
+  { label: "90D", value: "90d", days: 90 },
+  { label: "1Y", value: "1y", days: 365 },
 ]
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
+const DEFAULT_COMMODITY_ID = Number(process.env.NEXT_PUBLIC_DEFAULT_COMMODITY_ID || "2")
+const DEFAULT_MANDI_ID = Number(process.env.NEXT_PUBLIC_DEFAULT_MANDI_ID || "1")
+
+interface TrendPoint {
+  date: string
+  modal_price: number
+  min_price: number
+  max_price: number
+}
+
+interface ForecastPoint {
+  date: string
+  price: number
+  lower: number
+  upper: number
+  horizon: number
+}
+
+interface MandiPricePoint {
+  name: string
+  price: number
+  arrival: number
+}
+
+function formatDate(rawDate: string): string {
+  return new Date(rawDate).toLocaleDateString("en-US", { day: "numeric", month: "short" })
+}
+
+function formatCurrency(value: number): string {
+  return `Rs ${Math.round(value).toLocaleString("en-IN")}`
+}
 
 export default function ChartsPage() {
   const [timeRange, setTimeRange] = useState("7d")
   const [chartType, setChartType] = useState<"price" | "forecast" | "comparison">("price")
+  const [trendData, setTrendData] = useState<TrendPoint[]>([])
+  const [forecastData, setForecastData] = useState<ForecastPoint[]>([])
+  const [mandiComparisonData, setMandiComparisonData] = useState<MandiPricePoint[]>([])
+  const [commodityName, setCommodityName] = useState("Selected Commodity")
+  const [mandiName, setMandiName] = useState(`Mandi ${DEFAULT_MANDI_ID}`)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
-  const currentPrice = priceHistoryData[priceHistoryData.length - 1].price
-  const previousPrice = priceHistoryData[0].price
-  const priceChange = ((currentPrice - previousPrice) / previousPrice) * 100
+  const selectedDays = useMemo(
+    () => timeRanges.find((range) => range.value === timeRange)?.days ?? 7,
+    [timeRange]
+  )
+
+  useEffect(() => {
+    let cancelled = false
+
+    async function fetchAnalyticsData() {
+      setLoading(true)
+      setError(null)
+      try {
+        const [trendRes, currentRes, forecastRes] = await Promise.all([
+          fetch(`${API_BASE_URL}/api/v1/prices/trend/${DEFAULT_COMMODITY_ID}?days=${selectedDays}`),
+          fetch(`${API_BASE_URL}/api/v1/prices/current/commodity/${DEFAULT_COMMODITY_ID}?limit=8`),
+          fetch(
+            `${API_BASE_URL}/api/v1/forecasts/${DEFAULT_COMMODITY_ID}/${DEFAULT_MANDI_ID}/multi-horizon?horizons=1,3,7,14,30`
+          ),
+        ])
+
+        if (!trendRes.ok) {
+          throw new Error("Unable to load price trend data from API.")
+        }
+        if (!currentRes.ok) {
+          throw new Error("Unable to load current mandi prices from API.")
+        }
+
+        const trendJson = (await trendRes.json()) as Array<Record<string, unknown>>
+        const currentJson = (await currentRes.json()) as Array<Record<string, unknown>>
+
+        const parsedTrendData: TrendPoint[] = trendJson
+          .map((item) => ({
+            date: formatDate(String(item.date ?? "")),
+            modal_price: Number(item.modal_price ?? 0),
+            min_price: Number(item.min_price ?? 0),
+            max_price: Number(item.max_price ?? 0),
+          }))
+          .reverse()
+
+        const parsedMandiComparison: MandiPricePoint[] = currentJson.slice(0, 8).map((item) => ({
+          name: String(item.mandi_name ?? "Unknown"),
+          price: Number(item.modal_price ?? 0),
+          arrival: Number(item.arrival_qty ?? 0),
+        }))
+
+        const currentFirst = currentJson[0]
+        if (currentFirst) {
+          const nextCommodityName = String(currentFirst.commodity_name ?? "").trim()
+          const nextMandiName = String(currentFirst.mandi_name ?? "").trim()
+          if (nextCommodityName) setCommodityName(nextCommodityName)
+          if (nextMandiName) setMandiName(nextMandiName)
+        }
+
+        let parsedForecastData: ForecastPoint[] = []
+        if (forecastRes.ok) {
+          const forecastJson = (await forecastRes.json()) as {
+            forecasts?: Record<string, Record<string, unknown>>
+          }
+          const forecastEntries = Object.values(forecastJson.forecasts ?? {})
+          parsedForecastData = forecastEntries
+            .map((entry) => ({
+              date: formatDate(String(entry.target_date ?? "")),
+              price: Number(entry.predicted_price ?? 0),
+              lower: Number(entry.confidence_lower ?? 0),
+              upper: Number(entry.confidence_upper ?? 0),
+              horizon: Number(entry.horizon_days ?? 0),
+            }))
+            .sort((a, b) => a.horizon - b.horizon)
+
+          const forecastFirst = forecastEntries[0]
+          if (forecastFirst) {
+            const nextCommodityName = String(forecastFirst.commodity_name ?? "").trim()
+            const nextMandiName = String(forecastFirst.mandi_name ?? "").trim()
+            if (nextCommodityName) setCommodityName(nextCommodityName)
+            if (nextMandiName) setMandiName(nextMandiName)
+          }
+        } else if (forecastRes.status !== 404) {
+          throw new Error("Unable to load forecast data from API.")
+        }
+
+        if (!cancelled) {
+          setTrendData(parsedTrendData)
+          setMandiComparisonData(parsedMandiComparison)
+          setForecastData(parsedForecastData)
+        }
+      } catch (fetchError) {
+        if (!cancelled) {
+          setTrendData([])
+          setMandiComparisonData([])
+          setForecastData([])
+          setError(fetchError instanceof Error ? fetchError.message : "Failed to load analytics data.")
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false)
+        }
+      }
+    }
+
+    fetchAnalyticsData()
+    return () => {
+      cancelled = true
+    }
+  }, [selectedDays])
+
+  const currentPrice = trendData.length > 0 ? trendData[trendData.length - 1].modal_price : 0
+  const previousPrice = trendData.length > 0 ? trendData[0].modal_price : 0
+  const priceChange = previousPrice > 0 ? ((currentPrice - previousPrice) / previousPrice) * 100 : 0
+  const bestSellDate =
+    trendData.length > 0
+      ? trendData.reduce((best, point) => (point.modal_price > best.modal_price ? point : best), trendData[0]).date
+      : "N/A"
+  const highestPrice = trendData.length > 0 ? Math.max(...trendData.map((point) => point.modal_price)) : 0
+  const lowestPrice = trendData.length > 0 ? Math.min(...trendData.map((point) => point.modal_price)) : 0
+  const averagePrice =
+    trendData.length > 0
+      ? trendData.reduce((sum, point) => sum + point.modal_price, 0) / trendData.length
+      : 0
+  const volatility = (() => {
+    if (trendData.length === 0 || averagePrice === 0) return 0
+    const variance =
+      trendData.reduce((sum, point) => sum + (point.modal_price - averagePrice) ** 2, 0) / trendData.length
+    return (Math.sqrt(variance) / averagePrice) * 100
+  })()
+
+  const exportTrendData = () => {
+    if (trendData.length === 0) return
+
+    const csvHeader = "date,modal_price,min_price,max_price\n"
+    const csvRows = trendData
+      .map((point) => `${point.date},${point.modal_price},${point.min_price},${point.max_price}`)
+      .join("\n")
+    const blob = new Blob([csvHeader + csvRows], { type: "text/csv;charset=utf-8;" })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement("a")
+    link.href = url
+    link.download = `kisaanai-price-trend-${timeRange}.csv`
+    link.click()
+    URL.revokeObjectURL(url)
+  }
 
   interface TooltipPayload {
     color: string
@@ -102,7 +243,7 @@ export default function ChartsPage() {
       <header className="flex flex-col gap-4">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Price Analytics</h1>
-          <p className="text-muted-foreground">Historical trends and forecasts for Potato (Jyoti)</p>
+          <p className="text-muted-foreground">Historical trends and forecasts for {commodityName}</p>
         </div>
 
         <div className="flex gap-2 overflow-x-auto pb-2">
@@ -119,7 +260,8 @@ export default function ChartsPage() {
         </div>
       </header>
 
-      {/* Price Summary Cards */}
+      {error && <p className="text-sm text-red-600">{error}</p>}
+
       <section className="grid gap-4 md:grid-cols-3">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -127,7 +269,9 @@ export default function ChartsPage() {
             <TrendingUp className="h-4 w-4 text-green-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">₹{currentPrice}</div>
+            <div className="text-2xl font-bold">
+              {loading ? "Loading..." : currentPrice > 0 ? formatCurrency(currentPrice) : "No data"}
+            </div>
             <p className="text-xs text-muted-foreground">per quintal</p>
           </CardContent>
         </Card>
@@ -143,9 +287,15 @@ export default function ChartsPage() {
           </CardHeader>
           <CardContent>
             <div className={`text-2xl font-bold ${priceChange >= 0 ? "text-green-500" : "text-red-500"}`}>
-              {priceChange > 0 ? "+" : ""}{priceChange.toFixed(1)}%
+              {loading
+                ? "Loading..."
+                : previousPrice > 0
+                  ? `${priceChange > 0 ? "+" : ""}${priceChange.toFixed(1)}%`
+                  : "No data"}
             </div>
-            <p className="text-xs text-muted-foreground">vs {timeRanges.find(r => r.value === timeRange)?.label}</p>
+            <p className="text-xs text-muted-foreground">
+              vs {timeRanges.find((r) => r.value === timeRange)?.label}
+            </p>
           </CardContent>
         </Card>
 
@@ -155,13 +305,12 @@ export default function ChartsPage() {
             <Calendar className="h-4 w-4 text-primary" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">Wed-Thu</div>
-            <p className="text-xs text-muted-foreground">Based on historical data</p>
+            <div className="text-2xl font-bold">{loading ? "Loading..." : bestSellDate}</div>
+            <p className="text-xs text-muted-foreground">Based on live historical data</p>
           </CardContent>
         </Card>
       </section>
 
-      {/* Chart Type Selector */}
       <div className="flex gap-2 overflow-x-auto pb-2">
         <Button
           variant={chartType === "price" ? "default" : "outline"}
@@ -186,7 +335,6 @@ export default function ChartsPage() {
         </Button>
       </div>
 
-      {/* Charts */}
       {chartType === "price" && (
         <Card>
           <CardHeader>
@@ -195,34 +343,51 @@ export default function ChartsPage() {
                 <CardTitle>Price History</CardTitle>
                 <CardDescription>Daily price movement over selected period</CardDescription>
               </div>
-              <Button size="sm" variant="outline">
+              <Button size="sm" variant="outline" disabled={trendData.length === 0} onClick={exportTrendData}>
                 <Download className="mr-2 h-4 w-4" />
                 Export
               </Button>
             </div>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={350}>
-              <AreaChart data={priceHistoryData}>
-                <defs>
-                  <linearGradient id="colorPrice" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                <XAxis dataKey="date" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
-                <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(v) => `₹${v}`} />
-                <Tooltip content={<CustomTooltip />} />
-                <Area
-                  type="monotone"
-                  dataKey="price"
-                  stroke="hsl(var(--primary))"
-                  fillOpacity={1}
-                  fill="url(#colorPrice)"
-                />
-              </AreaChart>
-            </ResponsiveContainer>
+            {loading ? (
+              <div className="flex h-[350px] items-center justify-center text-sm text-muted-foreground">
+                Loading chart data...
+              </div>
+            ) : trendData.length === 0 ? (
+              <div className="flex h-[350px] items-center justify-center text-sm text-muted-foreground">
+                No trend data available.
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height={350}>
+                <AreaChart data={trendData}>
+                  <defs>
+                    <linearGradient id="colorPrice" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
+                      <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                  <XAxis dataKey="date" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
+                  <YAxis
+                    stroke="#888888"
+                    fontSize={12}
+                    tickLine={false}
+                    axisLine={false}
+                    tickFormatter={(value: number) => formatCurrency(value)}
+                  />
+                  <Tooltip content={<CustomTooltip />} />
+                  <Area
+                    type="monotone"
+                    dataKey="modal_price"
+                    name="Modal Price"
+                    stroke="hsl(var(--primary))"
+                    fillOpacity={1}
+                    fill="url(#colorPrice)"
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            )}
           </CardContent>
         </Card>
       )}
@@ -233,7 +398,7 @@ export default function ChartsPage() {
             <div className="flex items-center justify-between">
               <div>
                 <CardTitle>AI Price Forecast</CardTitle>
-                <CardDescription>7-day prediction with confidence interval</CardDescription>
+                <CardDescription>Multi-horizon prediction with confidence interval</CardDescription>
               </div>
               <Button size="icon" variant="outline">
                 <Info className="h-4 w-4" />
@@ -241,61 +406,79 @@ export default function ChartsPage() {
             </div>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={350}>
-              <AreaChart data={forecastData}>
-                <defs>
-                  <linearGradient id="colorForecast" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="hsl(142, 76%, 36%)" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="hsl(142, 76%, 36%)" stopOpacity={0} />
-                  </linearGradient>
-                  <linearGradient id="colorConfidence" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="hsl(var(--muted-foreground) / 0.2)" stopOpacity={0.2} />
-                    <stop offset="95%" stopColor="hsl(var(--muted-foreground) / 0.05)" stopOpacity={0.05} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                <XAxis dataKey="date" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
-                <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(v) => `₹${v}`} />
-                <Tooltip content={<CustomTooltip />} />
-                <Legend />
-                <Area
-                  type="monotone"
-                  dataKey="upper"
-                  stroke="transparent"
-                  fill="url(#colorConfidence)"
-                />
-                <Area
-                  type="monotone"
-                  dataKey="lower"
-                  stroke="transparent"
-                  fill="hsl(var(--background))"
-                />
-                <Area
-                  type="monotone"
-                  dataKey="price"
-                  stroke="hsl(142, 76%, 36%)"
-                  fillOpacity={1}
-                  fill="url(#colorForecast)"
-                  name="Predicted Price"
-                />
-                <Line
-                  type="monotone"
-                  dataKey="price"
-                  stroke="hsl(var(--primary))"
-                  strokeWidth={2}
-                  dot={false}
-                  name="Historical Price"
-                />
-              </AreaChart>
-            </ResponsiveContainer>
-            <div className="mt-4 rounded-lg bg-muted/50 p-4">
-              <p className="text-sm font-medium mb-2">AI Insights</p>
-              <ul className="text-sm text-muted-foreground space-y-1">
-                <li>• Price expected to peak on Jan 14 (₹1,295)</li>
-                <li>• Moderate confidence due to upcoming weather</li>
-                <li>• Consider selling before Jan 16 for better returns</li>
-              </ul>
-            </div>
+            {loading ? (
+              <div className="flex h-[350px] items-center justify-center text-sm text-muted-foreground">
+                Loading forecast...
+              </div>
+            ) : forecastData.length === 0 ? (
+              <div className="flex h-[350px] items-center justify-center text-sm text-muted-foreground">
+                Forecast unavailable for commodity {DEFAULT_COMMODITY_ID} at {mandiName}.
+              </div>
+            ) : (
+              <>
+                <ResponsiveContainer width="100%" height={350}>
+                  <AreaChart data={forecastData}>
+                    <defs>
+                      <linearGradient id="colorForecast" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="hsl(142, 76%, 36%)" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="hsl(142, 76%, 36%)" stopOpacity={0} />
+                      </linearGradient>
+                      <linearGradient id="colorConfidence" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="hsl(var(--muted-foreground) / 0.2)" stopOpacity={0.2} />
+                        <stop offset="95%" stopColor="hsl(var(--muted-foreground) / 0.05)" stopOpacity={0.05} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                    <XAxis dataKey="date" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
+                    <YAxis
+                      stroke="#888888"
+                      fontSize={12}
+                      tickLine={false}
+                      axisLine={false}
+                      tickFormatter={(value: number) => formatCurrency(value)}
+                    />
+                    <Tooltip content={<CustomTooltip />} />
+                    <Legend />
+                    <Area
+                      type="monotone"
+                      dataKey="upper"
+                      stroke="transparent"
+                      fill="url(#colorConfidence)"
+                      name="Upper Bound"
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="lower"
+                      stroke="transparent"
+                      fill="hsl(var(--background))"
+                      name="Lower Bound"
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="price"
+                      stroke="hsl(142, 76%, 36%)"
+                      fillOpacity={1}
+                      fill="url(#colorForecast)"
+                      name="Predicted Price"
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="price"
+                      stroke="hsl(var(--primary))"
+                      strokeWidth={2}
+                      dot={false}
+                      name="Forecast Line"
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+                <div className="mt-4 rounded-lg bg-muted/50 p-4">
+                  <p className="mb-2 text-sm font-medium">Forecast Context</p>
+                  <p className="text-sm text-muted-foreground">
+                    Multi-horizon model forecast for {commodityName} at {mandiName}.
+                  </p>
+                </div>
+              </>
+            )}
           </CardContent>
         </Card>
       )}
@@ -307,42 +490,61 @@ export default function ChartsPage() {
             <CardDescription>Compare prices across nearby mandis</CardDescription>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={350}>
-              <BarChart data={mandiComparisonData} layout="horizontal">
-                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                <XAxis type="category" dataKey="name" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
-                <YAxis type="number" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(v) => `₹${v}`} />
-                <Tooltip content={<CustomTooltip />} />
-                <Legend />
-                <Bar dataKey="price" fill="hsl(var(--primary))" name="Price (₹/Q)" radius={[0, 4, 4, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
+            {loading ? (
+              <div className="flex h-[350px] items-center justify-center text-sm text-muted-foreground">
+                Loading mandi comparison...
+              </div>
+            ) : mandiComparisonData.length === 0 ? (
+              <div className="flex h-[350px] items-center justify-center text-sm text-muted-foreground">
+                No live mandi prices available.
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height={350}>
+                <BarChart data={mandiComparisonData}>
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                  <XAxis dataKey="name" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
+                  <YAxis
+                    stroke="#888888"
+                    fontSize={12}
+                    tickLine={false}
+                    axisLine={false}
+                    tickFormatter={(value: number) => formatCurrency(value)}
+                  />
+                  <Tooltip content={<CustomTooltip />} />
+                  <Legend />
+                  <Bar dataKey="price" fill="hsl(var(--primary))" name="Price (Rs/Q)" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
           </CardContent>
         </Card>
       )}
 
-      {/* Additional Stats */}
       <Card>
         <CardHeader>
           <CardTitle>Price Statistics</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
             <div>
-              <p className="text-sm text-muted-foreground">Highest (7 days)</p>
-              <p className="text-xl font-bold">₹1,280</p>
+              <p className="text-sm text-muted-foreground">
+                Highest ({timeRanges.find((r) => r.value === timeRange)?.label})
+              </p>
+              <p className="text-xl font-bold">{highestPrice > 0 ? formatCurrency(highestPrice) : "No data"}</p>
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">Lowest (7 days)</p>
-              <p className="text-xl font-bold">₹1,180</p>
+              <p className="text-sm text-muted-foreground">
+                Lowest ({timeRanges.find((r) => r.value === timeRange)?.label})
+              </p>
+              <p className="text-xl font-bold">{lowestPrice > 0 ? formatCurrency(lowestPrice) : "No data"}</p>
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Average</p>
-              <p className="text-xl font-bold">₹1,237</p>
+              <p className="text-xl font-bold">{averagePrice > 0 ? formatCurrency(averagePrice) : "No data"}</p>
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Volatility</p>
-              <p className="text-xl font-bold">Low</p>
+              <p className="text-xl font-bold">{trendData.length > 0 ? `${volatility.toFixed(1)}%` : "No data"}</p>
             </div>
           </div>
         </CardContent>

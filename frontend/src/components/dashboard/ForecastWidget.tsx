@@ -27,13 +27,13 @@ interface ForecastWidgetProps {
 export function ForecastWidget({ commodityId }: ForecastWidgetProps) {
   const [data, setData] = useState<ForecastData | null>(null)
   const [loading, setLoading] = useState(true)
+  const defaultMandiId = Number(process.env.NEXT_PUBLIC_DEFAULT_MANDI_ID || 1)
 
   useEffect(() => {
     async function fetchForecast() {
       try {
         setLoading(true)
-        // Defaulting to mandi_id=1 (Azadpur) for demo
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/v1/forecasts/${commodityId}/1?horizon_days=7`)
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/v1/forecasts/${commodityId}/${defaultMandiId}?horizon_days=7`)
         if (!res.ok) throw new Error("Failed to fetch forecast")
         const json = await res.json()
         setData(json)
@@ -46,7 +46,7 @@ export function ForecastWidget({ commodityId }: ForecastWidgetProps) {
     }
 
     fetchForecast()
-  }, [commodityId])
+  }, [commodityId, defaultMandiId])
 
   if (loading) {
     return (

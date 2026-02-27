@@ -1,4 +1,4 @@
-"""
+﻿"""
 Webhook endpoints for WhatsApp and Voice services.
 
 This module provides API endpoints for:
@@ -171,11 +171,11 @@ async def voice_incoming_call(request: Request):
         # Generate TwiML response
         twiml = f"""<?xml version="1.0" encoding="UTF-8"?>
 <Response>
-    <Say language="hi-IN">नमस्ते, कृषि मित्र में आपका स्वागत है। भाव जानने के लिए फसल का नाम बोलें।</Say>
+    <Say language="hi-IN">à¤¨à¤®à¤¸à¥à¤¤à¥‡, à¤•à¥ƒà¤·à¤¿ à¤®à¤¿à¤¤à¥à¤° à¤®à¥‡à¤‚ à¤†à¤ªà¤•à¤¾ à¤¸à¥à¤µà¤¾à¤—à¤¤ à¤¹à¥ˆà¥¤ à¤­à¤¾à¤µ à¤œà¤¾à¤¨à¤¨à¥‡ à¤•à¥‡ à¤²à¤¿à¤ à¤«à¤¸à¤² à¤•à¤¾ à¤¨à¤¾à¤® à¤¬à¥‹à¤²à¥‡à¤‚à¥¤</Say>
     <Gather input="speech" action="/webhooks/voice/process" method="POST" language="hi-IN" timeout="5">
-        <Say language="hi-IN">कृपया फसल का नाम बोलें।</Say>
+        <Say language="hi-IN">à¤•à¥ƒà¤ªà¤¯à¤¾ à¤«à¤¸à¤² à¤•à¤¾ à¤¨à¤¾à¤® à¤¬à¥‹à¤²à¥‡à¤‚à¥¤</Say>
     </Gather>
-    <Say language="hi-IN">धन्यवाद।</Say>
+    <Say language="hi-IN">à¤§à¤¨à¥à¤¯à¤µà¤¾à¤¦à¥¤</Say>
 </Response>"""
         
         return PlainTextResponse(content=twiml, media_type="application/xml")
@@ -215,9 +215,9 @@ async def voice_process_speech(request: Request):
 <Response>
     <Say language="hi-IN">{response_text}</Say>
     <Gather input="speech" action="/webhooks/voice/process" method="POST" language="hi-IN" timeout="5">
-        <Say language="hi-IN">क्या आप कुछ और जानना चाहेंगे?</Say>
+        <Say language="hi-IN">à¤•à¥à¤¯à¤¾ à¤†à¤ª à¤•à¥à¤› à¤”à¤° à¤œà¤¾à¤¨à¤¨à¤¾ à¤šà¤¾à¤¹à¥‡à¤‚à¤—à¥‡?</Say>
     </Gather>
-    <Say language="hi-IN">धन्यवाद। दोबारा मिलेंगे।</Say>
+    <Say language="hi-IN">à¤§à¤¨à¥à¤¯à¤µà¤¾à¤¦à¥¤ à¤¦à¥‹à¤¬à¤¾à¤°à¤¾ à¤®à¤¿à¤²à¥‡à¤‚à¤—à¥‡à¥¤</Say>
 </Response>"""
         
         return PlainTextResponse(content=twiml, media_type="application/xml")
@@ -226,7 +226,7 @@ async def voice_process_speech(request: Request):
         logger.error(f"Error processing speech: {e}")
         twiml = """<?xml version="1.0" encoding="UTF-8"?>
 <Response>
-    <Say language="hi-IN">माफ कीजिये, कुछ तकनीकी समस्या है। कृपया बाद में कॉल करें।</Say>
+    <Say language="hi-IN">à¤®à¤¾à¤« à¤•à¥€à¤œà¤¿à¤¯à¥‡, à¤•à¥à¤› à¤¤à¤•à¤¨à¥€à¤•à¥€ à¤¸à¤®à¤¸à¥à¤¯à¤¾ à¤¹à¥ˆà¥¤ à¤•à¥ƒà¤ªà¤¯à¤¾ à¤¬à¤¾à¤¦ à¤®à¥‡à¤‚ à¤•à¥‰à¤² à¤•à¤°à¥‡à¤‚à¥¤</Say>
 </Response>"""
         return PlainTextResponse(content=twiml, media_type="application/xml")
 
@@ -398,31 +398,31 @@ async def process_voice_query(query: str, phone_number: Optional[str]) -> str:
     """
     query_lower = query.lower()
     
-    # Simple pattern matching for demo
+    # Simple pattern matching
     # In production, use NLU/bot service
     
-    if any(word in query_lower for word in ["भाव", "दाम", "कीमत", "price", "rate"]):
+    if any(word in query_lower for word in ["à¤­à¤¾à¤µ", "à¤¦à¤¾à¤®", "à¤•à¥€à¤®à¤¤", "price", "rate"]):
         # Price query
-        if "प्याज" in query_lower or "onion" in query_lower:
-            return "प्याज का वर्तमान भाव ढाई हजार से तीन हजार रुपये प्रति क्विंटल है।"
-        elif "आलू" in query_lower or "potato" in query_lower:
-            return "आलू का वर्तमान भाव एक हजार से डेढ़ हजार रुपये प्रति क्विंटल है।"
-        elif "टमाटर" in query_lower or "tomato" in query_lower:
-            return "टमाटर का वर्तमान भाव दो हजार से ढाई हजार रुपये प्रति क्विंटल है।"
+        if "à¤ªà¥à¤¯à¤¾à¤œ" in query_lower or "onion" in query_lower:
+            return "à¤ªà¥à¤¯à¤¾à¤œ à¤•à¤¾ à¤µà¤°à¥à¤¤à¤®à¤¾à¤¨ à¤­à¤¾à¤µ à¤¢à¤¾à¤ˆ à¤¹à¤œà¤¾à¤° à¤¸à¥‡ à¤¤à¥€à¤¨ à¤¹à¤œà¤¾à¤° à¤°à¥à¤ªà¤¯à¥‡ à¤ªà¥à¤°à¤¤à¤¿ à¤•à¥à¤µà¤¿à¤‚à¤Ÿà¤² à¤¹à¥ˆà¥¤"
+        elif "à¤†à¤²à¥‚" in query_lower or "potato" in query_lower:
+            return "à¤†à¤²à¥‚ à¤•à¤¾ à¤µà¤°à¥à¤¤à¤®à¤¾à¤¨ à¤­à¤¾à¤µ à¤à¤• à¤¹à¤œà¤¾à¤° à¤¸à¥‡ à¤¡à¥‡à¤¢à¤¼ à¤¹à¤œà¤¾à¤° à¤°à¥à¤ªà¤¯à¥‡ à¤ªà¥à¤°à¤¤à¤¿ à¤•à¥à¤µà¤¿à¤‚à¤Ÿà¤² à¤¹à¥ˆà¥¤"
+        elif "à¤Ÿà¤®à¤¾à¤Ÿà¤°" in query_lower or "tomato" in query_lower:
+            return "à¤Ÿà¤®à¤¾à¤Ÿà¤° à¤•à¤¾ à¤µà¤°à¥à¤¤à¤®à¤¾à¤¨ à¤­à¤¾à¤µ à¤¦à¥‹ à¤¹à¤œà¤¾à¤° à¤¸à¥‡ à¤¢à¤¾à¤ˆ à¤¹à¤œà¤¾à¤° à¤°à¥à¤ªà¤¯à¥‡ à¤ªà¥à¤°à¤¤à¤¿ à¤•à¥à¤µà¤¿à¤‚à¤Ÿà¤² à¤¹à¥ˆà¥¤"
         else:
-            return "कृपया फसल का नाम बताएं। जैसे: प्याज का भाव।"
+            return "à¤•à¥ƒà¤ªà¤¯à¤¾ à¤«à¤¸à¤² à¤•à¤¾ à¤¨à¤¾à¤® à¤¬à¤¤à¤¾à¤à¤‚à¥¤ à¤œà¥ˆà¤¸à¥‡: à¤ªà¥à¤¯à¤¾à¤œ à¤•à¤¾ à¤­à¤¾à¤µà¥¤"
     
-    elif any(word in query_lower for word in ["मंडी", "बाजार", "बेचने", "mandi", "market"]):
-        return "नजदीकी मंडी जानने के लिए अपना स्थान साझा करें या जिले का नाम बताएं।"
+    elif any(word in query_lower for word in ["à¤®à¤‚à¤¡à¥€", "à¤¬à¤¾à¤œà¤¾à¤°", "à¤¬à¥‡à¤šà¤¨à¥‡", "mandi", "market"]):
+        return "à¤¨à¤œà¤¦à¥€à¤•à¥€ à¤®à¤‚à¤¡à¥€ à¤œà¤¾à¤¨à¤¨à¥‡ à¤•à¥‡ à¤²à¤¿à¤ à¤…à¤ªà¤¨à¤¾ à¤¸à¥à¤¥à¤¾à¤¨ à¤¸à¤¾à¤à¤¾ à¤•à¤°à¥‡à¤‚ à¤¯à¤¾ à¤œà¤¿à¤²à¥‡ à¤•à¤¾ à¤¨à¤¾à¤® à¤¬à¤¤à¤¾à¤à¤‚à¥¤"
     
-    elif any(word in query_lower for word in ["भविष्य", "forecast", "prediction"]):
-        return "अगले सात दिनों में कीमतों में थोड़ी वृद्धि की संभावना है। विस्तृत जानकारी के लिए WhatsApp पर संदेश भेजें।"
+    elif any(word in query_lower for word in ["à¤­à¤µà¤¿à¤·à¥à¤¯", "forecast", "prediction"]):
+        return "à¤…à¤—à¤²à¥‡ à¤¸à¤¾à¤¤ à¤¦à¤¿à¤¨à¥‹à¤‚ à¤®à¥‡à¤‚ à¤•à¥€à¤®à¤¤à¥‹à¤‚ à¤®à¥‡à¤‚ à¤¥à¥‹à¤¡à¤¼à¥€ à¤µà¥ƒà¤¦à¥à¤§à¤¿ à¤•à¥€ à¤¸à¤‚à¤­à¤¾à¤µà¤¨à¤¾ à¤¹à¥ˆà¥¤ à¤µà¤¿à¤¸à¥à¤¤à¥ƒà¤¤ à¤œà¤¾à¤¨à¤•à¤¾à¤°à¥€ à¤•à¥‡ à¤²à¤¿à¤ WhatsApp à¤ªà¤° à¤¸à¤‚à¤¦à¥‡à¤¶ à¤­à¥‡à¤œà¥‡à¤‚à¥¤"
     
-    elif any(word in query_lower for word in ["मदद", "help", "सहायता"]):
-        return "मैं आपकी मदद कर सकता हूं: भाव जानने के लिए फसल का नाम बोलें, मंडी खोजने के लिए अपना जिला बताएं।"
+    elif any(word in query_lower for word in ["à¤®à¤¦à¤¦", "help", "à¤¸à¤¹à¤¾à¤¯à¤¤à¤¾"]):
+        return "à¤®à¥ˆà¤‚ à¤†à¤ªà¤•à¥€ à¤®à¤¦à¤¦ à¤•à¤° à¤¸à¤•à¤¤à¤¾ à¤¹à¥‚à¤‚: à¤­à¤¾à¤µ à¤œà¤¾à¤¨à¤¨à¥‡ à¤•à¥‡ à¤²à¤¿à¤ à¤«à¤¸à¤² à¤•à¤¾ à¤¨à¤¾à¤® à¤¬à¥‹à¤²à¥‡à¤‚, à¤®à¤‚à¤¡à¥€ à¤–à¥‹à¤œà¤¨à¥‡ à¤•à¥‡ à¤²à¤¿à¤ à¤…à¤ªà¤¨à¤¾ à¤œà¤¿à¤²à¤¾ à¤¬à¤¤à¤¾à¤à¤‚à¥¤"
     
     else:
-        return "माफ कीजिये, मैं समझ नहीं पाया। भाव जानने के लिए फसल का नाम बोलें।"
+        return "à¤®à¤¾à¤« à¤•à¥€à¤œà¤¿à¤¯à¥‡, à¤®à¥ˆà¤‚ à¤¸à¤®à¤ à¤¨à¤¹à¥€à¤‚ à¤ªà¤¾à¤¯à¤¾à¥¤ à¤­à¤¾à¤µ à¤œà¤¾à¤¨à¤¨à¥‡ à¤•à¥‡ à¤²à¤¿à¤ à¤«à¤¸à¤² à¤•à¤¾ à¤¨à¤¾à¤® à¤¬à¥‹à¤²à¥‡à¤‚à¥¤"
 
 
 def _verify_twilio_signature(url: str, params: Dict[str, Any], signature: str) -> bool:

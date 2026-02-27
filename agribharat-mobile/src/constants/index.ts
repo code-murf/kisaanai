@@ -27,21 +27,3 @@ export const COLORS = {
   warning: '#f59e0b',
   error: '#ef4444',
 };
-
-export const SAMPLE_MANDIS = [
-  { id: 1, name: 'Azadpur Mandi', district: 'Delhi', state: 'DL', price: 1240, distance: 12, arrival: 4500 },
-  { id: 2, name: 'Okhla Mandi', district: 'Delhi', state: 'DL', price: 1210, distance: 15, arrival: 3200 },
-  { id: 3, name: 'Ghazipur Mandi', district: 'Delhi', state: 'DL', price: 1260, distance: 18, arrival: 2800 },
-  { id: 4, name: 'Keshopur Mandi', district: 'Delhi', state: 'DL', price: 1230, distance: 22, arrival: 1900 },
-  { id: 5, name: 'Narela Mandi', district: 'Delhi', state: 'DL', price: 1195, distance: 35, arrival: 2400 },
-];
-
-export const SAMPLE_PRICE_DATA = [
-  { date: 'Jan 01', price: 1180 },
-  { date: 'Jan 02', price: 1195 },
-  { date: 'Jan 03', price: 1180 },
-  { date: 'Jan 04', price: 1210 },
-  { date: 'Jan 05', price: 1230 },
-  { date: 'Jan 06', price: 1240 },
-  { date: 'Jan 07', price: 1240 },
-];

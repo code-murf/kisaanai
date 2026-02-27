@@ -2,12 +2,12 @@
 """
 Weather API Endpoints.
 """
-from typing import List, Optional
+from typing import List
 from datetime import date
 from fastapi import APIRouter, Depends, Query, HTTPException
 from pydantic import BaseModel
 
-from app.services.weather_service import WeatherService, WeatherForecast as ServiceWeatherForecast
+from app.services.weather_service import WeatherService
 
 router = APIRouter(prefix="/weather", tags=["weather"])
 
@@ -47,5 +47,7 @@ async def get_weather_forecast(
                 icon=f.icon
             ) for f in forecasts
         ]
+    except RuntimeError as e:
+        raise HTTPException(status_code=503, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

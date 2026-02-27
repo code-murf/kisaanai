@@ -4,9 +4,8 @@ Price Service for querying current and historical commodity prices.
 from datetime import date, datetime, timedelta
 from decimal import Decimal
 from typing import List, Optional, Tuple
-import math
 
-from sqlalchemy import select, func, and_, or_
+from sqlalchemy import select, func, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
@@ -18,7 +17,6 @@ from app.schemas import (
     PriceResponse,
     PriceWithDetailsResponse,
     PriceListResponse,
-    PriceHistoryRequest,
     PriceTrendPoint,
 )
 
@@ -96,52 +94,8 @@ class PriceService:
             query = query.join(Mandi).where(Mandi.state == state)
         
         query = query.limit(limit)
-        
-        try:
-            result = await self.db.execute(query)
-            prices = result.unique().scalars().all()
-            if not prices:
-                return self._get_mock_prices_by_commodity(commodity_id)
-            return prices
-        except Exception as e:
-            print(f"DB Error: {e}")
-            return self._get_mock_prices_by_commodity(commodity_id)
-
-    def _get_mock_prices_by_commodity(self, commodity_id: int) -> List[Price]:
-        """Generate mock prices if DB is empty or fails."""
-        # Mock Mandis
-        mandis = [
-            Mandi(id=1, name="Azadpur", state="Delhi", district="North Delhi", latitude=28.7, longitude=77.1),
-            Mandi(id=2, name="Ghazipur", state="Delhi", district="East Delhi", latitude=28.6, longitude=77.3),
-            Mandi(id=3, name="Vashi", state="Maharashtra", district="Mumbai", latitude=19.0, longitude=73.0),
-            Mandi(id=4, name="Lasalgaon", state="Maharashtra", district="Nashik", latitude=20.1, longitude=74.2),
-            Mandi(id=5, name="Kolar", state="Karnataka", district="Kolar", latitude=13.1, longitude=78.1),
-        ]
-        
-        # Mock Commodity
-        # We don't have the name from ID easily without query, so generic
-        comm = Commodity(id=commodity_id, name=f"Commodity {commodity_id}", category="Vegetables", unit="Quintal")
-        
-        prices = []
-        import random
-        base_price = 2000 + (commodity_id * 100)
-        
-        for mandi in mandis:
-            modal = base_price + random.randint(-200, 200)
-            prices.append(Price(
-                id=random.randint(1000, 9999),
-                mandi_id=mandi.id,
-                commodity_id=commodity_id,
-                price_date=date.today(),
-                min_price=Decimal(modal * 0.9),
-                max_price=Decimal(modal * 1.1),
-                modal_price=Decimal(modal),
-                arrival_qty=random.randint(50, 500),
-                source="Mock",
-                mandi=mandi,
-                commodity=comm
-            ))
-        return prices
+        result = await self.db.execute(query)
+        return result.unique().scalars().all()
     
     async def get_current_prices_by_mandi(
         self,
@@ -256,50 +210,8 @@ class PriceService:
         offset = (page - 1) * page_size
         query = query.offset(offset).limit(page_size).order_by(Price.price_date.desc())
         
-        try:
-            result = await self.db.execute(query)
-            prices = result.unique().scalars().all()
-            
-            if not prices:
-                 return self._get_mock_price_history(commodity_id, days), 30
-            
-            return list(prices), total
-        except Exception as e:
-            print(f"DB Error (History): {e}")
-            return self._get_mock_price_history(commodity_id, days), 30
-
-    def _get_mock_price_history(self, commodity_id: int, days: int) -> List[Price]:
-        """Generate mock history."""
-        prices = []
-        import random
-        today = date.today()
-        base_price = 2500
-        
-        # Mock Mandi and Commodity
-        mandi = Mandi(id=1, name="Azadpur", state="Delhi", district="North Delhi", latitude=28.7, longitude=77.1)
-        comm = Commodity(id=commodity_id, name="Onion", category="Vegetables", unit="Quintal")
-
-        for i in range(days):
-            d = today - timedelta(days=i)
-            # Add trend
-            trend = math.sin(i / 5) * 200
-            modal = base_price + trend + random.randint(-50, 50)
-            
-            prices.append(Price(
-                id=i+1,
-                mandi_id=1,
-                commodity_id=commodity_id,
-                price_date=d,
-                min_price=Decimal(modal * 0.95),
-                max_price=Decimal(modal * 1.05),
-                modal_price=Decimal(modal),
-                arrival_qty=random.randint(100, 1000),
-                source="Mock",
-                mandi=mandi,
-                commodity=comm
-            ))
-        return prices
-        
+        result = await self.db.execute(query)
+        prices = result.unique().scalars().all()
         return list(prices), total
     
     async def get_price_trend(
@@ -340,48 +252,20 @@ class PriceService:
         elif state:
             query = query.join(Mandi).where(Mandi.state == state)
         
-        try:
-            result = await self.db.execute(query)
-            rows = result.all()
-            
-            trends = []
-            for row in rows:
-                trends.append(
-                    PriceTrendPoint(
-                        date=row.price_date,
-                        modal_price=Decimal(str(row.avg_modal)),
-                        min_price=row.min_price,
-                        max_price=row.max_price,
-                        arrival_qty=row.total_arrival,
-                    )
-                )
-            
-            if not trends:
-                return self._get_mock_price_trend(days)
-            
-            return trends
-        except Exception as e:
-             print(f"DB Error (Trend): {e}")
-             return self._get_mock_price_trend(days)
+        result = await self.db.execute(query)
+        rows = result.all()
 
-    def _get_mock_price_trend(self, days: int) -> List[PriceTrendPoint]:
-        """Generate mock trend."""
         trends = []
-        import random
-        today = date.today()
-        
-        for i in range(days):
-            d = today - timedelta(days=days-1-i) # Ascending order
-            # Add sinusoidal trend
-            val = 2000 + math.sin(i / 3) * 300 + random.randint(-50, 50)
-            
-            trends.append(PriceTrendPoint(
-                date=d,
-                modal_price=Decimal(int(val)),
-                min_price=Decimal(int(val * 0.9)),
-                max_price=Decimal(int(val * 1.1)),
-                arrival_qty=random.randint(100, 1000)
-            ))
+        for row in rows:
+            trends.append(
+                PriceTrendPoint(
+                    date=row.price_date,
+                    modal_price=Decimal(str(row.avg_modal)),
+                    min_price=row.min_price,
+                    max_price=row.max_price,
+                    arrival_qty=row.total_arrival,
+                )
+            )
         return trends
     
     async def get_price_comparison(

@@ -97,12 +97,21 @@ async def find_nearby_mandis(
     mandi_service = MandiService(db)
     
     if use_postgis:
-        mandis_with_distance = await mandi_service.get_nearby(
-            latitude=request.latitude,
-            longitude=request.longitude,
-            radius_km=request.radius_km,
-            limit=request.limit,
-        )
+        try:
+            mandis_with_distance = await mandi_service.get_nearby(
+                latitude=request.latitude,
+                longitude=request.longitude,
+                radius_km=request.radius_km,
+                limit=request.limit,
+            )
+        except Exception:
+            # Auto-fallback to Python distance calculation if PostGIS unavailable
+            mandis_with_distance = await mandi_service.get_nearby_python(
+                latitude=request.latitude,
+                longitude=request.longitude,
+                radius_km=request.radius_km,
+                limit=request.limit,
+            )
     else:
         mandis_with_distance = await mandi_service.get_nearby_python(
             latitude=request.latitude,

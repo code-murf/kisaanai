@@ -1,0 +1,14 @@
+[
+  {
+    "user_id": "user_456",
+    "user_name": "Liker",
+    "location_lat": 28.0,
+    "location_lng": 77.0,
+    "tags": [],
+    "id": "ba7aad88-6c93-45f9-96b6-e85309fb17e5",
+    "audio_url": "/static/audio/428ebb27-7fca-4c6b-8a3d-96e5f651510c.mp3",
+    "created_at": "2026-02-27T21:16:24.352388",
+    "likes": 1,
+    "is_helpful": false
+  }
+]

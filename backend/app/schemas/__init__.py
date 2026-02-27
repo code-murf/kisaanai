@@ -56,7 +56,7 @@ class UserBase(BaseModel):
 
 class UserCreate(UserBase):
     """Schema for user registration."""
-    password: Optional[str] = Field(default=None, min_length=8, max_length=100)
+    password: Optional[str] = Field(default=None, min_length=8, max_length=72)
 
 
 class UserUpdate(BaseModel):
@@ -244,6 +244,7 @@ class PriceBase(BaseModel):
     max_price: Optional[Decimal] = Field(default=None, ge=0)
     modal_price: Optional[Decimal] = Field(default=None, ge=0)
     arrival_qty: Optional[int] = Field(default=None, ge=0)
+    source: Optional[str] = Field(default="api", max_length=50)
 
 
 class PriceCreate(PriceBase):

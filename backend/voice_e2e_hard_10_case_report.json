@@ -3,13 +3,13 @@
   "stt_smoke": {
     "ok": true,
     "file": "C:\\Users\\Asus\\Desktop\\Aiforbharat\\backend\\test_audio.wav",
-    "latency_ms": 778.99,
+    "latency_ms": 643.57,
     "transcript_preview": " झाल झाल",
     "attempts": [
       {
         "file": "C:\\Users\\Asus\\Desktop\\Aiforbharat\\backend\\test_audio.wav",
         "ok": true,
-        "latency_ms": 778.99,
+        "latency_ms": 643.57,
         "transcript_preview": " झाल झाल"
       }
     ]
@@ -21,7 +21,7 @@
       "query": "धान की रोपाई के बाद यूरिया पहली बार कितने दिन बाद डालना चाहिए और दूसरी बार कब?",
       "response_ok": true,
       "keyword_ok": true,
-      "tts_ok": true,
+      "tts_ok": false,
       "hit_count": 4,
       "min_hits": 2,
       "hit_terms": [
@@ -30,9 +30,9 @@
         "दिन",
         "धान"
       ],
-      "llm_latency_ms": 346.53,
-      "tts_latency_ms": 6335.56,
-      "response_preview": "धान की रोपाई के बाद यूरिया पहली बार 10-15 दिन बाद डालना चाहिए और दूसरी बार 20-25 दिन बाद डालना चाहिए। लेकिन यह आपकी मिट्टी और फसल की स्थिति पर निर्भर करता है।"
+      "llm_latency_ms": 844.92,
+      "tts_latency_ms": 706.89,
+      "response_preview": "धान की रोपाई के बाद पहली बार यूरिया 7-10 दिन बाद डालना चाहिए, जब पौधे 2-3 पत्तियों वाले होते हैं। दूसरी बार यूरिया 20-25 दिन बाद डालना चाहिए, जब पौधे पनीरी बनाने लगते हैं। यह समय सीमा मिट्टी और मौसम की स्थिति पर निर्भर क"
     },
     {
       "id": "H2",
@@ -40,7 +40,7 @@
       "query": "गेहूं में पहली सिंचाई बुवाई के कितने दिन बाद करनी चाहिए? अगर ठंड ज्यादा हो तो क्या बदलना चाहिए?",
       "response_ok": true,
       "keyword_ok": true,
-      "tts_ok": true,
+      "tts_ok": false,
       "hit_count": 5,
       "min_hits": 2,
       "hit_terms": [
@@ -50,9 +50,9 @@
         "दिन",
         "बुवाई"
       ],
-      "llm_latency_ms": 305.77,
-      "tts_latency_ms": 5208.81,
-      "response_preview": "गेहूं में पहली सिंचाई बुवाई के 20-25 दिन बाद करनी चाहिए। अगर ठंड ज्यादा हो तो 5-7 दिन और इंतजार करें और मिट्टी की नमी की जांच करें।"
+      "llm_latency_ms": 237.53,
+      "tts_latency_ms": 310.34,
+      "response_preview": "गेहूं में पहली सिंचाई बुवाई के 20-25 दिन बाद करनी चाहिए। अगर ठंड ज्यादा हो तो पहली सिंचाई 30-35 दिन बाद तक टाल सकते हैं।"
     },
     {
       "id": "H3",
@@ -60,7 +60,7 @@
       "query": "IMD shows 70mm rain in 2 days for tomato. Should I spray fungicide now or wait? Give practical rule.",
       "response_ok": true,
       "keyword_ok": true,
-      "tts_ok": true,
+      "tts_ok": false,
       "hit_count": 5,
       "min_hits": 2,
       "hit_terms": [
@@ -70,9 +70,9 @@
         "wait",
         "tomato"
       ],
-      "llm_latency_ms": 342.43,
-      "tts_latency_ms": 6866.44,
-      "response_preview": "For tomatoes, if rain is expected, it's best to wait. Spray fungicide after the rain, if you see signs of fungal disease. Rule: If soil is waterlogged, wait 2-3 days after water drains out before spraying."
+      "llm_latency_ms": 369.02,
+      "tts_latency_ms": 335.61,
+      "response_preview": "For tomatoes, it's best to spray fungicide before heavy rain. Since IMD shows 70mm rain in 2 days, consider spraying fungicide today or tomorrow morning. Practical rule: if rain is expected within 24 hours, spray fungici"
     },
     {
       "id": "H4",
@@ -80,18 +80,19 @@
       "query": "Soil test says low zinc and medium nitrogen in paddy. Give a 30-day nutrient plan with per-acre doses.",
       "response_ok": true,
       "keyword_ok": true,
-      "tts_ok": true,
-      "hit_count": 4,
+      "tts_ok": false,
+      "hit_count": 5,
       "min_hits": 3,
       "hit_terms": [
         "zinc",
         "nitrogen",
         "paddy",
-        "acre"
+        "acre",
+        "plan"
       ],
-      "llm_latency_ms": 426.07,
-      "tts_latency_ms": 8640.79,
-      "response_preview": "For paddy with low zinc and medium nitrogen, apply 5 kg zinc sulfate per acre and 60 kg urea per acre over 30 days. Split into 3 parts: 20 kg urea after 10 days, 20 kg after 20 days, and zinc sulfate at 15 days. Check so"
+      "llm_latency_ms": 476.51,
+      "tts_latency_ms": 328.44,
+      "response_preview": "For paddy with low zinc and medium nitrogen, apply 5 kg zinc sulfate per acre. For nitrogen, use 40 kg urea per acre, split into 20 kg at transplanting and 20 kg after 15 days. Also, add 20 kg DAP per acre at transplanti"
     },
     {
       "id": "H5",
@@ -99,7 +100,7 @@
       "query": "Cotton pink bollworm trap count is 8 moths/night. Is threshold crossed? What should I do this week?",
       "response_ok": true,
       "keyword_ok": true,
-      "tts_ok": true,
+      "tts_ok": false,
       "hit_count": 6,
       "min_hits": 2,
       "hit_terms": [
@@ -110,9 +111,9 @@
         "spray",
         "monitor"
       ],
-      "llm_latency_ms": 399.55,
-      "tts_latency_ms": 7432.95,
-      "response_preview": "The threshold for cotton pink bollworm is 5 moths/night. Since your count is 8 moths/night, the threshold is crossed. This week, consider spraying insecticides and using pheromone traps to control the infestation. Monito"
+      "llm_latency_ms": 360.49,
+      "tts_latency_ms": 325.35,
+      "response_preview": "The threshold for cotton pink bollworm is 5 moths/night. Since your trap count is 8 moths/night, the threshold is crossed. This week, consider spraying insecticides and removing infested fruits to control the infestation"
     },
     {
       "id": "H6",
@@ -120,18 +121,20 @@
       "query": "Onion mandi price is ₹1500/quintal. Store for 20 days or sell now? Assume 2% loss and storage cost.",
       "response_ok": true,
       "keyword_ok": true,
-      "tts_ok": true,
-      "hit_count": 4,
+      "tts_ok": false,
+      "hit_count": 6,
       "min_hits": 3,
       "hit_terms": [
+        "onion",
+        "store",
         "sell",
         "loss",
         "cost",
         "price"
       ],
-      "llm_latency_ms": 316.92,
-      "tts_latency_ms": 5619.78,
-      "response_preview": "Consider selling now, as storing for 20 days with 2% loss and storage costs may reduce your profit. Check local mandi rates again to confirm, and consider the current price is a good deal."
+      "llm_latency_ms": 412.57,
+      "tts_latency_ms": 345.28,
+      "response_preview": "If you store onions for 20 days, you'll incur a 2% loss and storage cost. Considering this, it's better to sell now at ₹1500/quintal. Storing may not fetch a higher price after 20 days, and you'll also have to bear the s"
     },
     {
       "id": "H7",
@@ -139,7 +142,7 @@
       "query": "सरसों में माहू लग गया है और बारिश आने वाली है। दवा कब छिड़कूं और कितने अंतराल पर?",
       "response_ok": true,
       "keyword_ok": true,
-      "tts_ok": true,
+      "tts_ok": false,
       "hit_count": 6,
       "min_hits": 2,
       "hit_terms": [
@@ -150,9 +153,9 @@
         "अंतराल",
         "दवा"
       ],
-      "llm_latency_ms": 472.76,
-      "tts_latency_ms": 8496.21,
-      "response_preview": "सरसों में माहू का इलाज करने के लिए दवा का छिड़काव बारिश से पहले करना चाहिए। आप रोगनाशक दवा का छिड़काव करें और 10-15 दिनों के अंतराल पर दोबारा छिड़काव करें। लेकिन अगर बारिश ज्यादा हो रही है तो आपको अपने इलाके के कृषि विशे"
+      "llm_latency_ms": 662.76,
+      "tts_latency_ms": 312.93,
+      "response_preview": "सरसों में माहू की समस्या होना आम बात है। बारिश आने से पहले दवा छिड़कना अच्छा होगा। आप रोगनाशक दवा का छिड़काव करें और 10-15 दिनों के अंतराल पर दोबारा छिड़काव करें। लेकिन अगर बारिश ज्यादा हो रही है तो आपको दवा का छिड़काव द"
     },
     {
       "id": "H8",
@@ -160,20 +163,19 @@
       "query": "For drip chili in 42C heatwave, give morning-evening irrigation schedule for next 5 days.",
       "response_ok": true,
       "keyword_ok": true,
-      "tts_ok": true,
-      "hit_count": 6,
+      "tts_ok": false,
+      "hit_count": 5,
       "min_hits": 3,
       "hit_terms": [
         "drip",
         "chili",
-        "heatwave",
         "irrigation",
         "morning",
         "evening"
       ],
-      "llm_latency_ms": 481.14,
-      "tts_latency_ms": 6221.23,
-      "response_preview": "In 42C heatwave, drip irrigation for chili needs careful planning. For next 5 days, water your chili plants in two shifts: morning 6-7 am and evening 5-6 pm. Give 30 minutes of water in morning and 45 minutes in evening."
+      "llm_latency_ms": 448.53,
+      "tts_latency_ms": 347.96,
+      "response_preview": "In 42C heat, drip irrigation for chili needs careful planning. For the next 5 days, water your chili plants in two shifts: morning (6-7 am) and evening (5-6 pm). Give 30 minutes of water in the morning and 45 minutes in "
     },
     {
       "id": "H9",
@@ -181,17 +183,18 @@
       "query": "PM-KISAN installment नहीं आई, DBT pending दिखा रहा है. Step-by-step complaint process बताओ.",
       "response_ok": true,
       "keyword_ok": true,
-      "tts_ok": true,
-      "hit_count": 3,
+      "tts_ok": false,
+      "hit_count": 4,
       "min_hits": 2,
       "hit_terms": [
         "pm-kisan",
+        "शिकायत",
         "हेल्पलाइन",
         "ईमेल"
       ],
-      "llm_latency_ms": 685.03,
-      "tts_latency_ms": 6516.5,
-      "response_preview": "PM-KISAN की installment नहीं आई तो चिंता न करें, मैं आपको बताता हूँ क्या करना है. पहले पोर्टल पर जाकर अपने अकाउंट का स्टेटस चेक करें, फिर eKYC और बैंक अकाउंट को वेरिफाई करें. अगर फिर भी समस्या है तो अपने नजदीकी कृषि ऑफिस"
+      "llm_latency_ms": 701.64,
+      "tts_latency_ms": 347.89,
+      "response_preview": "PM-KISAN की किश्त नहीं मिली तो चिंता न करें। पहले पोर्टल पर स्टेटस चेक करें, फिर eKYC और बैंक खाते की जानकारी सही है कि नहीं देखें। अगर सब ठीक है तो अपने नजदीकी कृषि कार्यालय या CSC में संपर्क करें। अगर समस्या बनी रहे तो"
     },
     {
       "id": "H10",
@@ -199,7 +202,7 @@
       "query": "I have 3 acres maize+paddy and pump runs only 2 hours/day. Optimize 7-day water allocation.",
       "response_ok": true,
       "keyword_ok": true,
-      "tts_ok": true,
+      "tts_ok": false,
       "hit_count": 3,
       "min_hits": 3,
       "hit_terms": [
@@ -207,16 +210,16 @@
         "paddy",
         "water"
       ],
-      "llm_latency_ms": 420.78,
-      "tts_latency_ms": 8255.29,
-      "response_preview": "For 3 acres of maize and paddy, allocate water like this: \nDay 1-2: maize gets 1 hour, paddy gets 1 hour. \nDay 3-4: maize gets 1.5 hours, paddy gets 0.5 hours. \nDay 5-6: paddy gets 1.5 hours, maize gets 0.5 hours. \nDay 7"
+      "llm_latency_ms": 395.83,
+      "tts_latency_ms": 343.03,
+      "response_preview": "For 3 acres of maize and paddy, prioritize maize on days 1, 3, and 5, and paddy on days 2, 4, and 6. On day 7, water both equally. Adjust based on weather and soil moisture: if it rains, skip a day; if it's very dry, add"
     }
   ],
   "summary": {
     "total_cases": 10,
     "response_pass": 10,
     "keyword_pass": 10,
-    "tts_pass": 10,
-    "full_pass": 10
+    "tts_pass": 0,
+    "full_pass": 0
   }
 }

@@ -26,9 +26,11 @@ export function CropDoctor() {
   const [diagnosis, setDiagnosis] = useState<any>(null)
   const [loading, setLoading] = useState(false)
   const [image, setImage] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
 
   const handleRecommend = async () => {
     setLoading(true)
+    setError(null)
     try {
       const query = new URLSearchParams({
         n: n || "0",
@@ -44,11 +46,8 @@ export function CropDoctor() {
       setRecommendations(data)
     } catch (err) {
       console.error(err)
-      // Fallback Mock
-       setRecommendations([
-          { crop_name: "Wheat", confidence: 0.92, reason: "Optimal for neutral soil.", season: "Rabi" },
-          { crop_name: "Mustard", confidence: 0.85, reason: "Good for current season.", season: "Rabi" }
-       ])
+      setRecommendations([])
+      setError("Unable to fetch crop recommendations from live service.")
     } finally {
       setLoading(false)
     }
@@ -62,6 +61,7 @@ export function CropDoctor() {
       reader.onloadend = () => {
         setImage(reader.result as string)
         setDiagnosis(null) // Reset diagnosis on new image
+        setError(null)
       }
       reader.readAsDataURL(file)
     }
@@ -70,6 +70,7 @@ export function CropDoctor() {
   const handleDiagnose = async () => {
     if (!selectedFile) return
     setLoading(true)
+    setError(null)
     try {
         const formData = new FormData()
         formData.append("file", selectedFile)
@@ -84,13 +85,8 @@ export function CropDoctor() {
         setDiagnosis(data)
     } catch (err) {
         console.error(err)
-        // Fallback
-        setDiagnosis({
-            disease_name: "Leaf Spot",
-            confidence: 0.85, 
-            treatment: "Apply Copper Fungicide.",
-            severity: "Moderate"
-        })
+        setDiagnosis(null)
+        setError("Unable to run disease diagnosis from live model service.")
     } finally {
         setLoading(false)
     }
@@ -135,6 +131,10 @@ export function CropDoctor() {
             <Button className="w-full" onClick={handleRecommend} disabled={loading}>
               {loading ? "Analyzing..." : "Get Crop Recommendations"}
             </Button>
+
+            {error && (
+              <p className="text-sm text-red-600">{error}</p>
+            )}
 
             {recommendations.length > 0 && (
               <div className="space-y-3 pt-4 border-t">

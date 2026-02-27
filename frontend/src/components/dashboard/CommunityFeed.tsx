@@ -1,9 +1,9 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Play, Pause, Mic, MapPin, ThumbsUp } from "lucide-react";
+import { Play, Pause, Mic, MapPin, ThumbsUp, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type AudioNote = {
@@ -17,51 +17,67 @@ type AudioNote = {
   tags: string[];
 };
 
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+
+function resolveAudioUrl(audioUrl: string) {
+  if (!audioUrl) return audioUrl;
+  if (audioUrl.startsWith("http://") || audioUrl.startsWith("https://")) return audioUrl;
+  return `${API_BASE}${audioUrl}`;
+}
+
 export function CommunityFeed() {
   const [notes, setNotes] = useState<AudioNote[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [playingId, setPlayingId] = useState<string | null>(null);
   const [audioRef, setAudioRef] = useState<HTMLAudioElement | null>(null);
 
-  // Mock Data Load (replace with API call later)
   useEffect(() => {
-    // In real app: fetch('/api/v1/community/notes')
-    const mockNotes: AudioNote[] = [
-      {
-        id: "1",
-        user_name: "Rinesh Patel",
-        location_lat: 28.6,
-        location_lng: 77.2,
-        audio_url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3", // Demo URL
-        created_at: "2 hours ago",
-        likes: 12,
-        tags: ["Azadpur", "Road Block"],
-      },
-      {
-        id: "2",
-        user_name: "Suresh Kumar",
-        location_lat: 28.5,
-        location_lng: 77.1,
-        audio_url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3",
-        created_at: "5 hours ago",
-        likes: 8,
-        tags: ["Market Price", "Tomato"],
-      },
-    ];
-    setNotes(mockNotes);
+    const fetchNotes = async () => {
+      try {
+        const response = await fetch(`${API_BASE}/api/v1/community/notes?lat=28.61&lng=77.23&radius=50`, {
+          cache: "no-store",
+        });
+
+        if (!response.ok) {
+          throw new Error(`Community API error (${response.status})`);
+        }
+
+        const data = (await response.json()) as AudioNote[];
+        setNotes(data);
+        setError(null);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to load community feed");
+        setNotes([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchNotes();
   }, []);
 
   const togglePlay = (note: AudioNote) => {
+    const audioUrl = resolveAudioUrl(note.audio_url);
+
     if (playingId === note.id) {
       audioRef?.pause();
       setPlayingId(null);
-    } else {
-      if (audioRef) audioRef.pause();
-      const audio = new Audio(note.audio_url);
-      audio.onended = () => setPlayingId(null);
-      audio.play();
-      setAudioRef(audio);
-      setPlayingId(note.id);
+      return;
     }
+
+    if (audioRef) audioRef.pause();
+    const audio = new Audio(audioUrl);
+    audio.onended = () => setPlayingId(null);
+    audio
+      .play()
+      .then(() => {
+        setAudioRef(audio);
+        setPlayingId(note.id);
+      })
+      .catch(() => {
+        setPlayingId(null);
+      });
   };
 
   return (
@@ -79,59 +95,82 @@ export function CommunityFeed() {
         </div>
       </CardHeader>
       <CardContent className="flex-1 overflow-y-auto p-0">
-        <div className="divide-y divide-border/50">
-          {notes.map((note) => (
-            <div key={note.id} className="p-4 hover:bg-muted/30 transition-colors">
-              <div className="flex items-start justify-between mb-2">
-                <div className="flex items-center gap-2">
-                  <div className="h-8 w-8 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center text-xs font-bold text-orange-700 dark:text-orange-400">
-                    {note.user_name.charAt(0)}
+        {loading ? (
+          <div className="p-4 text-sm text-muted-foreground">Loading community notes...</div>
+        ) : error ? (
+          <div className="p-4 flex items-start gap-2 text-sm text-red-500">
+            <AlertCircle className="h-4 w-4 mt-0.5" />
+            <span>{error}</span>
+          </div>
+        ) : notes.length === 0 ? (
+          <div className="p-4 text-sm text-muted-foreground">No community notes available yet.</div>
+        ) : (
+          <div className="divide-y divide-border/50">
+            {notes.map((note) => (
+              <div key={note.id} className="p-4 hover:bg-muted/30 transition-colors">
+                <div className="flex items-start justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <div className="h-8 w-8 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center text-xs font-bold text-orange-700 dark:text-orange-400">
+                      {note.user_name.charAt(0)}
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium leading-none">{note.user_name}</p>
+                      <p className="text-xs text-muted-foreground">{new Date(note.created_at).toLocaleString()}</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-sm font-medium leading-none">{note.user_name}</p>
-                    <p className="text-xs text-muted-foreground">{note.created_at}</p>
-                  </div>
-                </div>
-                <Button size="icon" variant="ghost" className="h-8 w-8 text-muted-foreground hover:text-green-500">
+                  <Button size="icon" variant="ghost" className="h-8 w-8 text-muted-foreground hover:text-green-500">
                     <ThumbsUp className="h-4 w-4" />
                     <span className="sr-only">Like</span>
-                </Button>
-              </div>
+                  </Button>
+                </div>
 
-              <div className="flex items-center gap-3 bg-muted/50 p-2 rounded-lg mb-2">
-                 <Button
+                <div className="flex items-center gap-3 bg-muted/50 p-2 rounded-lg mb-2">
+                  <Button
                     size="icon"
                     className={cn(
-                        "h-8 w-8 rounded-full shadow-sm transition-all",
-                        playingId === note.id ? "bg-orange-500 hover:bg-orange-600" : "bg-white dark:bg-zinc-800 text-foreground hover:bg-gray-100"
+                      "h-8 w-8 rounded-full shadow-sm transition-all",
+                      playingId === note.id
+                        ? "bg-orange-500 hover:bg-orange-600"
+                        : "bg-white dark:bg-zinc-800 text-foreground hover:bg-gray-100"
                     )}
                     onClick={() => togglePlay(note)}
-                 >
-                    {playingId === note.id ? <Pause className="h-4 w-4 text-white" /> : <Play className="h-4 w-4 fill-current" />}
-                 </Button>
-                 <div className="h-1 flex-1 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-                    <div className={cn("h-full bg-orange-500 animate-pulse w-2/3", playingId === note.id ? "opacity-100" : "opacity-0")} />
-                 </div>
-                 <span className="text-xs font-mono text-muted-foreground">0:15s</span>
-              </div>
+                  >
+                    {playingId === note.id ? (
+                      <Pause className="h-4 w-4 text-white" />
+                    ) : (
+                      <Play className="h-4 w-4 fill-current" />
+                    )}
+                  </Button>
+                  <div className="h-1 flex-1 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                    <div
+                      className={cn(
+                        "h-full bg-orange-500 animate-pulse w-2/3",
+                        playingId === note.id ? "opacity-100" : "opacity-0"
+                      )}
+                    />
+                  </div>
+                  <span className="text-xs font-mono text-muted-foreground">{note.likes} likes</span>
+                </div>
 
-              <div className="flex flex-wrap gap-1">
-                {note.tags.map(tag => (
+                <div className="flex flex-wrap gap-1">
+                  {note.tags.map((tag) => (
                     <span key={tag} className="text-[10px] px-2 py-0.5 rounded-full bg-secondary text-secondary-foreground border border-border/50">
-                        #{tag}
+                      #{tag}
                     </span>
-                ))}
+                  ))}
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </CardContent>
       <div className="p-3 border-t border-border/50 bg-muted/20">
-         <Button className="w-full bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white shadow-md">
-            <Mic className="h-4 w-4 mr-2" />
-            Record Note
-         </Button>
+        <Button className="w-full bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white shadow-md">
+          <Mic className="h-4 w-4 mr-2" />
+          Record Note
+        </Button>
       </div>
     </Card>
   );
 }
+

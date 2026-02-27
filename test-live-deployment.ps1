@@ -16,13 +16,13 @@ Write-Host "[1/8] Testing EC2 Instance Connectivity..." -ForegroundColor Yellow
 try {
     $ping = Test-Connection -ComputerName $EC2_IP -Count 2 -Quiet
     if ($ping) {
-        Write-Host "✓ EC2 instance is reachable" -ForegroundColor Green
+        Write-Host "[PASS] EC2 instance is reachable" -ForegroundColor Green
     } else {
-        Write-Host "✗ EC2 instance is NOT reachable" -ForegroundColor Red
+        Write-Host "[FAIL] EC2 instance is NOT reachable" -ForegroundColor Red
         Write-Host "  Check if instance is running in AWS Console" -ForegroundColor Yellow
     }
 } catch {
-    Write-Host "✗ Cannot ping EC2 instance" -ForegroundColor Red
+    Write-Host "[FAIL] Cannot ping EC2 instance" -ForegroundColor Red
 }
 Write-Host ""
 
@@ -30,9 +30,9 @@ Write-Host ""
 Write-Host "[2/8] Testing Nginx (Port 80)..." -ForegroundColor Yellow
 try {
     $response = Invoke-WebRequest -Uri $NGINX_URL -TimeoutSec 10 -UseBasicParsing
-    Write-Host "✓ Nginx is responding (Status: $($response.StatusCode))" -ForegroundColor Green
+    Write-Host "[PASS] Nginx is responding (Status: $($response.StatusCode))" -ForegroundColor Green
 } catch {
-    Write-Host "✗ Nginx is NOT responding on port 80" -ForegroundColor Red
+    Write-Host "[FAIL] Nginx is NOT responding on port 80" -ForegroundColor Red
     Write-Host "  Error: $($_.Exception.Message)" -ForegroundColor Yellow
 }
 Write-Host ""
@@ -41,9 +41,9 @@ Write-Host ""
 Write-Host "[3/8] Testing Frontend (Port 3000)..." -ForegroundColor Yellow
 try {
     $response = Invoke-WebRequest -Uri "$FRONTEND_URL`:3000" -TimeoutSec 10 -UseBasicParsing
-    Write-Host "✓ Frontend is responding (Status: $($response.StatusCode))" -ForegroundColor Green
+    Write-Host "[PASS] Frontend is responding (Status: $($response.StatusCode))" -ForegroundColor Green
 } catch {
-    Write-Host "✗ Frontend is NOT responding on port 3000" -ForegroundColor Red
+    Write-Host "[FAIL] Frontend is NOT responding on port 3000" -ForegroundColor Red
     Write-Host "  Error: $($_.Exception.Message)" -ForegroundColor Yellow
 }
 Write-Host ""
@@ -52,10 +52,10 @@ Write-Host ""
 Write-Host "[4/8] Testing Backend Health Endpoint..." -ForegroundColor Yellow
 try {
     $response = Invoke-RestMethod -Uri "$BACKEND_URL/health" -TimeoutSec 10
-    Write-Host "✓ Backend health check passed" -ForegroundColor Green
+    Write-Host "[PASS] Backend health check passed" -ForegroundColor Green
     Write-Host "  Response: $($response | ConvertTo-Json -Compress)" -ForegroundColor Gray
 } catch {
-    Write-Host "✗ Backend health check failed" -ForegroundColor Red
+    Write-Host "[FAIL] Backend health check failed" -ForegroundColor Red
     Write-Host "  Error: $($_.Exception.Message)" -ForegroundColor Yellow
 }
 Write-Host ""
@@ -65,12 +65,12 @@ Write-Host "[5/8] Testing Backend API - Commodities..." -ForegroundColor Yellow
 try {
     $response = Invoke-RestMethod -Uri "$BACKEND_URL/api/v1/commodities" -TimeoutSec 10
     if ($response.Count -gt 0) {
-        Write-Host "✓ Commodities API working ($($response.Count) items)" -ForegroundColor Green
+        Write-Host "[PASS] Commodities API working ($($response.Count) items)" -ForegroundColor Green
     } else {
-        Write-Host "⚠ Commodities API responding but no data" -ForegroundColor Yellow
+        Write-Host "[WARN] Commodities API responding but no data" -ForegroundColor Yellow
     }
 } catch {
-    Write-Host "✗ Commodities API failed" -ForegroundColor Red
+    Write-Host "[FAIL] Commodities API failed" -ForegroundColor Red
     Write-Host "  Error: $($_.Exception.Message)" -ForegroundColor Yellow
 }
 Write-Host ""
@@ -80,12 +80,12 @@ Write-Host "[6/8] Testing Backend API - Mandis..." -ForegroundColor Yellow
 try {
     $response = Invoke-RestMethod -Uri "$BACKEND_URL/api/v1/mandis" -TimeoutSec 10
     if ($response.Count -gt 0) {
-        Write-Host "✓ Mandis API working ($($response.Count) items)" -ForegroundColor Green
+        Write-Host "[PASS] Mandis API working ($($response.Count) items)" -ForegroundColor Green
     } else {
-        Write-Host "⚠ Mandis API responding but no data" -ForegroundColor Yellow
+        Write-Host "[WARN] Mandis API responding but no data" -ForegroundColor Yellow
     }
 } catch {
-    Write-Host "✗ Mandis API failed" -ForegroundColor Red
+    Write-Host "[FAIL] Mandis API failed" -ForegroundColor Red
     Write-Host "  Error: $($_.Exception.Message)" -ForegroundColor Yellow
 }
 Write-Host ""
@@ -94,9 +94,9 @@ Write-Host ""
 Write-Host "[7/8] Testing Database Connection..." -ForegroundColor Yellow
 try {
     $response = Invoke-RestMethod -Uri "$BACKEND_URL/api/v1/commodities" -TimeoutSec 10
-    Write-Host "✓ Database connection working (data retrieved)" -ForegroundColor Green
+    Write-Host "[PASS] Database connection working (data retrieved)" -ForegroundColor Green
 } catch {
-    Write-Host "✗ Database connection issue" -ForegroundColor Red
+    Write-Host "[FAIL] Database connection issue" -ForegroundColor Red
     Write-Host "  Error: $($_.Exception.Message)" -ForegroundColor Yellow
 }
 Write-Host ""

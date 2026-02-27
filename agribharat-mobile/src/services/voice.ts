@@ -1,4 +1,4 @@
-import { Audio } from 'expo-av';
+﻿import { Audio } from 'expo-av';
 import axios from 'axios';
 import { Platform } from 'react-native';
 import * as FileSystem from 'expo-file-system';
@@ -27,7 +27,7 @@ const VOICE_IDS = {
 };
 
 // Enhanced system prompt for better agricultural responses
-const AGRI_SYSTEM_PROMPT = `You are AgriBharat AI, an intelligent agricultural assistant for Indian farmers.
+const AGRI_SYSTEM_PROMPT = `You are KisaanAI, an intelligent agricultural assistant for Indian farmers.
 
 YOUR CAPABILITIES:
 1. Mandi Prices - Provide current market rates for crops (potato, wheat, rice, onion, tomato, etc.)
@@ -42,11 +42,11 @@ RESPONSE GUIDELINES:
 - Be friendly and conversational
 - Use simple language farmers can understand
 - Provide practical, actionable advice
-- Include approximate prices when asked (in ₹ per quintal)
+- Include approximate prices when asked (in â‚¹ per quintal)
 
 CURRENT REFERENCE PRICES (per quintal):
-- Potato: ₹1250-1450 | Wheat: ₹2150-2350 | Rice: ₹3250-3550
-- Onion: ₹1550-1850 | Tomato: ₹850-1250 | Maize: ₹1900-2200
+- Potato: â‚¹1250-1450 | Wheat: â‚¹2150-2350 | Rice: â‚¹3250-3550
+- Onion: â‚¹1550-1850 | Tomato: â‚¹850-1250 | Maize: â‚¹1900-2200
 
 Respond in the same language as the user's query (Hindi or English).`;
 
@@ -60,43 +60,43 @@ function detectIntent(text: string): string {
   const lowerText = text.toLowerCase();
 
   // Greetings
-  if (lowerText.includes('नमस्ते') || lowerText.includes('hello') || lowerText.includes('hi') ||
-      lowerText.includes('hey') || lowerText.includes('राम राम')) {
+  if (lowerText.includes('à¤¨à¤®à¤¸à¥à¤¤à¥‡') || lowerText.includes('hello') || lowerText.includes('hi') ||
+      lowerText.includes('hey') || lowerText.includes('à¤°à¤¾à¤® à¤°à¤¾à¤®')) {
     return 'greeting';
   }
 
   // Mandi/Market prices
-  if (lowerText.includes('मंडी') || lowerText.includes('बाजार') || lowerText.includes('mandi') ||
-      lowerText.includes('market') || lowerText.includes('भाव')) {
+  if (lowerText.includes('à¤®à¤‚à¤¡à¥€') || lowerText.includes('à¤¬à¤¾à¤œà¤¾à¤°') || lowerText.includes('mandi') ||
+      lowerText.includes('market') || lowerText.includes('à¤­à¤¾à¤µ')) {
     return 'mandi';
   }
 
   // Price queries
-  if (lowerText.includes('कीमत') || lowerText.includes('price') || lowerText.includes('rate') ||
-      lowerText.includes('रेट') || lowerText.includes('कितना') || lowerText.includes('how much')) {
+  if (lowerText.includes('à¤•à¥€à¤®à¤¤') || lowerText.includes('price') || lowerText.includes('rate') ||
+      lowerText.includes('à¤°à¥‡à¤Ÿ') || lowerText.includes('à¤•à¤¿à¤¤à¤¨à¤¾') || lowerText.includes('how much')) {
     return 'price';
   }
 
   // Weather
-  if (lowerText.includes('मौसम') || lowerText.includes('weather') || lowerText.includes('बारिश') ||
-      lowerText.includes('rain') || lowerText.includes('बादल')) {
+  if (lowerText.includes('à¤®à¥Œà¤¸à¤®') || lowerText.includes('weather') || lowerText.includes('à¤¬à¤¾à¤°à¤¿à¤¶') ||
+      lowerText.includes('rain') || lowerText.includes('à¤¬à¤¾à¤¦à¤²')) {
     return 'weather';
   }
 
   // Crops
-  if (lowerText.includes('फसल') || lowerText.includes('crop') || lowerText.includes('खेती') ||
-      lowerText.includes('उगाना') || lowerText.includes('बोनी')) {
+  if (lowerText.includes('à¤«à¤¸à¤²') || lowerText.includes('crop') || lowerText.includes('à¤–à¥‡à¤¤à¥€') ||
+      lowerText.includes('à¤‰à¤—à¤¾à¤¨à¤¾') || lowerText.includes('à¤¬à¥‹à¤¨à¥€')) {
     return 'crop';
   }
 
   // Pests
-  if (lowerText.includes('कीट') || lowerText.includes('pest') || lowerText.includes('इलायची') ||
+  if (lowerText.includes('à¤•à¥€à¤Ÿ') || lowerText.includes('pest') || lowerText.includes('à¤‡à¤²à¤¾à¤¯à¤šà¥€') ||
       lowerText.includes('disease')) {
     return 'pest';
   }
 
   // Fertilizers
-  if (lowerText.includes('खाद') || lowerText.includes('fertilizer') || lowerText.includes('यूरिया')) {
+  if (lowerText.includes('à¤–à¤¾à¤¦') || lowerText.includes('fertilizer') || lowerText.includes('à¤¯à¥‚à¤°à¤¿à¤¯à¤¾')) {
     return 'fertilizer';
   }
 
@@ -189,7 +189,7 @@ async function synthesizeWithElevenLabs(text: string, language: 'hi' | 'en'): Pr
   try {
     // Clean text for better synthesis
     const cleanText = text
-      .replace(/₹/g, 'रुपये')
+      .replace(/â‚¹/g, 'à¤°à¥à¤ªà¤¯à¥‡')
       .replace(/\*/g, '')
       .replace(/\n/g, '. ')
       .replace(/  /g, ' ')
@@ -265,7 +265,7 @@ async function fallbackTTS(text: string, language: 'hi-IN' | 'en-US'): Promise<v
     const Speech = require('expo-speech');
 
     const cleanText = text
-      .replace(/₹/g, 'रुपये')
+      .replace(/â‚¹/g, 'à¤°à¥à¤ªà¤¯à¥‡')
       .replace(/\*/g, '')
       .replace(/\n/g, '. ')
       .replace(/  /g, ' ');
@@ -313,24 +313,7 @@ async function getAIResponse(userMessage: string, conversationHistory: ChatMessa
 
   } catch (error: any) {
     console.error('Groq API Error:', error?.response?.data || error?.message);
-
-    // Better fallback responses based on common queries
-    const lowerMessage = userMessage.toLowerCase();
-
-    if (lowerMessage.includes('नमस्ते') || lowerMessage.includes('hello') || lowerMessage.includes('hi')) {
-      return 'नमस्ते! मैं आपका कृषि सहायक हूं। आप मंडी भाव, मौसम, फसल या खाद-बीज के बारे में पूछ सकते हैं।';
-    }
-
-    if (lowerMessage.includes('मंडी') || lowerMessage.includes('भाव') || lowerMessage.includes('price')) {
-      return 'वर्तमान मंडी भाव: आलू ₹1250-1450, गेहूं ₹2150-2350, चावल ₹3250-3550, प्याज ₹1550-1850 प्रति क्विंटल।';
-    }
-
-    if (lowerMessage.includes('मौसम') || lowerMessage.includes('weather')) {
-      return 'मौसम फसलों के लिए अनुकूल है। अगले 3-4 दिनों में हल्की बारिश हो सकती है। बुवाई के लिए अच्छा समय है।';
-    }
-
-    // Generic fallback
-    return 'मैं आपकी मदद करना चाहता हूं। कृपया मंडी भाव, मौसम, फसल या खाद-बीज के बारे में पूछें।';
+    throw new Error('AI service unavailable');
   }
 }
 
@@ -402,7 +385,7 @@ export class VoiceService {
     } catch (error: any) {
       console.error('Recording start error:', error);
       this.isListening = false;
-      onError('माइक्रोफोन अनुमति की जांच करें।');
+      onError('à¤®à¤¾à¤‡à¤•à¥à¤°à¥‹à¤«à¥‹à¤¨ à¤…à¤¨à¥à¤®à¤¤à¤¿ à¤•à¥€ à¤œà¤¾à¤‚à¤š à¤•à¤°à¥‡à¤‚à¥¤');
     }
   }
 
@@ -426,7 +409,7 @@ export class VoiceService {
       this.isListening = false;
 
       if (!uri) {
-        onError('रिकॉर्डिंग विफल। पुनः प्रयास करें।');
+        onError('à¤°à¤¿à¤•à¥‰à¤°à¥à¤¡à¤¿à¤‚à¤— à¤µà¤¿à¤«à¤²à¥¤ à¤ªà¥à¤¨à¤ƒ à¤ªà¥à¤°à¤¯à¤¾à¤¸ à¤•à¤°à¥‡à¤‚à¥¤');
         return;
       }
 
@@ -439,12 +422,12 @@ export class VoiceService {
         transcript = await transcribeAudio(uri, langHint);
       } catch (transcribeError: any) {
         console.error('Transcription failed:', transcribeError);
-        onError('आवाज़ पहचानने में विफल। कृपया पुनः प्रयास करें।');
+        onError('à¤†à¤µà¤¾à¤œà¤¼ à¤ªà¤¹à¤šà¤¾à¤¨à¤¨à¥‡ à¤®à¥‡à¤‚ à¤µà¤¿à¤«à¤²à¥¤ à¤•à¥ƒà¤ªà¤¯à¤¾ à¤ªà¥à¤¨à¤ƒ à¤ªà¥à¤°à¤¯à¤¾à¤¸ à¤•à¤°à¥‡à¤‚à¥¤');
         return;
       }
 
       if (!transcript || transcript.trim().length === 0) {
-        onError('कोई आवाज़ नहीं मिली। पुनः प्रयास करें।');
+        onError('à¤•à¥‹à¤ˆ à¤†à¤µà¤¾à¤œà¤¼ à¤¨à¤¹à¥€à¤‚ à¤®à¤¿à¤²à¥€à¥¤ à¤ªà¥à¤¨à¤ƒ à¤ªà¥à¤°à¤¯à¤¾à¤¸ à¤•à¤°à¥‡à¤‚à¥¤');
         return;
       }
 
@@ -457,7 +440,7 @@ export class VoiceService {
         response = await getAIResponse(transcript, this.conversationHistory);
       } catch (aiError: any) {
         console.error('AI response failed:', aiError);
-        response = 'मैं आपकी मदद करना चाहता हूं। कृपया फिर से पूछें।';
+        response = 'à¤®à¥ˆà¤‚ à¤†à¤ªà¤•à¥€ à¤®à¤¦à¤¦ à¤•à¤°à¤¨à¤¾ à¤šà¤¾à¤¹à¤¤à¤¾ à¤¹à¥‚à¤‚à¥¤ à¤•à¥ƒà¤ªà¤¯à¤¾ à¤«à¤¿à¤° à¤¸à¥‡ à¤ªà¥‚à¤›à¥‡à¤‚à¥¤';
       }
 
       // Save to history
@@ -478,7 +461,7 @@ export class VoiceService {
       console.error('Processing error:', error);
       this.isListening = false;
       this.recording = null;
-      onError(error?.message || 'प्रोसेसिंग विफल। पुनः प्रयास करें।');
+      onError(error?.message || 'à¤ªà¥à¤°à¥‹à¤¸à¥‡à¤¸à¤¿à¤‚à¤— à¤µà¤¿à¤«à¤²à¥¤ à¤ªà¥à¤¨à¤ƒ à¤ªà¥à¤°à¤¯à¤¾à¤¸ à¤•à¤°à¥‡à¤‚à¥¤');
     }
   }
 
@@ -605,7 +588,7 @@ export class VoiceService {
 
       onResult(intent, response);
     } catch (error: any) {
-      onError(error?.message || 'प्रोसेसिंग विफल। पुनः प्रयास करें।');
+      onError(error?.message || 'à¤ªà¥à¤°à¥‹à¤¸à¥‡à¤¸à¤¿à¤‚à¤— à¤µà¤¿à¤«à¤²à¥¤ à¤ªà¥à¤¨à¤ƒ à¤ªà¥à¤°à¤¯à¤¾à¤¸ à¤•à¤°à¥‡à¤‚à¥¤');
     }
   }
 

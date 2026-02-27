@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect, useMemo } from 'react';
 import {
   View,
   Text,
@@ -6,30 +6,123 @@ import {
   ScrollView,
   TouchableOpacity,
   Dimensions,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Search, TrendingUp, MapPin, Bell, ChevronRight } from 'lucide-react-native';
-import { COLORS, COMMODITIES, SAMPLE_MANDIS } from '../constants';
+import { TrendingUp, TrendingDown, MapPin, Bell, ChevronRight } from 'lucide-react-native';
+import { COLORS, COMMODITIES } from '../constants';
 import { useAppStore } from '../store/useAppStore';
+import { api } from '../services/api';
 
 const { width } = Dimensions.get('window');
 
-export default function HomeScreen({ navigation }: any) {
-  const { selectedCommodity, setSelectedCommodity, selectedLanguage } = useAppStore();
-  const [currentPrice, setCurrentPrice] = useState(1240);
+type BestMandi = {
+  id: number;
+  name: string;
+  district: string;
+  state: string;
+  price: number;
+};
 
-  const selectedCommodityData = COMMODITIES.find(c => c.value === selectedCommodity);
+export default function HomeScreen({ navigation }: any) {
+  const { user, selectedCommodity, setSelectedCommodity, selectedLanguage } = useAppStore();
+  const [currentPrice, setCurrentPrice] = useState<number | null>(null);
+  const [priceChangePct, setPriceChangePct] = useState<number | null>(null);
+  const [bestMandi, setBestMandi] = useState<BestMandi | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const selectedCommodityData = COMMODITIES.find((c) => c.value === selectedCommodity);
+
+  const selectedCommodityId = useMemo(() => {
+    return selectedCommodityData?.id ?? 1;
+  }, [selectedCommodityData]);
+
+  useEffect(() => {
+    let mounted = true;
+
+    const loadDashboard = async () => {
+      setLoading(true);
+      setError(null);
+
+      try {
+        const [nearbyMandis, currentPrices] = await Promise.all([
+          api.getNearbyMandis(28.6139, 77.209, 80),
+          api.getCurrentPrice(selectedCommodityId),
+        ]);
+
+        const priceByMandi = new Map<number, any>();
+        for (const row of currentPrices) {
+          priceByMandi.set(row.mandi_id, row);
+        }
+
+        const ranked = nearbyMandis
+          .map((m) => {
+            const priceRow = priceByMandi.get(m.id);
+            return {
+              id: m.id,
+              name: m.name,
+              district: m.district,
+              state: m.state,
+              price: typeof priceRow?.modal_price === 'number' ? priceRow.modal_price : null,
+              arrival: typeof priceRow?.arrival_qty === 'number' ? priceRow.arrival_qty : null,
+            };
+          })
+          .filter((m) => m.price !== null)
+          .sort((a, b) => (b.price as number) - (a.price as number));
+
+        const best = ranked[0] as BestMandi | undefined;
+
+        let changePct: number | null = null;
+        if (best?.id) {
+          const history = await api.getPriceHistory({
+            commodity_id: selectedCommodityId,
+            mandi_id: best.id,
+            days: 2,
+          });
+
+          if (history.length >= 2 && history[0].modal_price && history[1].modal_price) {
+            const latest = Number(history[0].modal_price);
+            const prev = Number(history[1].modal_price);
+            if (prev > 0) {
+              changePct = ((latest - prev) / prev) * 100;
+            }
+          }
+        }
+
+        if (mounted) {
+          setBestMandi(best ?? null);
+          setCurrentPrice(best?.price ?? null);
+          setPriceChangePct(changePct);
+        }
+      } catch (e) {
+        if (mounted) {
+          setError(e instanceof Error ? e.message : 'Failed to load live data');
+          setBestMandi(null);
+          setCurrentPrice(null);
+          setPriceChangePct(null);
+        }
+      } finally {
+        if (mounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    loadDashboard();
+
+    return () => {
+      mounted = false;
+    };
+  }, [selectedCommodityId]);
 
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        {/* Header */}
         <View style={styles.header}>
           <View>
-            <Text style={styles.greeting}>
-              {selectedLanguage === 'hi' ? 'नमस्ते,' : 'Hello,'}
-            </Text>
-            <Text style={styles.userName}>Ram Lal</Text>
+            <Text style={styles.greeting}>{selectedLanguage === 'hi' ? 'नमस्ते,' : 'Hello,'}</Text>
+            <Text style={styles.userName}>{user?.full_name || 'Farmer'}</Text>
           </View>
           <TouchableOpacity style={styles.bellButton}>
             <Bell size={24} color={COLORS.text} />
@@ -37,11 +130,8 @@ export default function HomeScreen({ navigation }: any) {
           </TouchableOpacity>
         </View>
 
-        {/* Commodity Selector */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>
-            {selectedLanguage === 'hi' ? 'फसल चुनें' : 'Select Crop'}
-          </Text>
+          <Text style={styles.sectionTitle}>{selectedLanguage === 'hi' ? 'फसल चुनें' : 'Select Crop'}</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.commodityScroll}>
             {COMMODITIES.map((commodity) => (
               <TouchableOpacity
@@ -65,143 +155,116 @@ export default function HomeScreen({ navigation }: any) {
           </ScrollView>
         </View>
 
-        {/* Price Card */}
         <View style={styles.priceCard}>
           <View style={styles.priceHeader}>
-            <Text style={styles.priceTitle}>
-              {selectedLanguage === 'hi' ? 'वर्तमान मूल्य' : 'Current Price'}
-            </Text>
-            <TrendingUp size={24} color={COLORS.success} />
+            <Text style={styles.priceTitle}>{selectedLanguage === 'hi' ? 'वर्तमान मूल्य' : 'Current Price'}</Text>
+            {priceChangePct !== null && priceChangePct >= 0 ? (
+              <TrendingUp size={24} color={COLORS.success} />
+            ) : (
+              <TrendingDown size={24} color={COLORS.error} />
+            )}
           </View>
-          <View style={styles.priceBody}>
-            <Text style={styles.priceValue}>₹{currentPrice}</Text>
-            <Text style={styles.priceUnit}>
-              {selectedLanguage === 'hi' ? '/क्विंटल' : '/Quintal'}
-            </Text>
-          </View>
-          <View style={styles.priceTrend}>
-            <View style={styles.trendUp}>
-              <TrendingUp size={16} color={COLORS.success} />
-              <Text style={styles.trendText}>+2.5%</Text>
+
+          {loading ? (
+            <View style={styles.loadingRow}>
+              <ActivityIndicator size="small" color={COLORS.primary} />
+              <Text style={styles.loadingText}>{selectedLanguage === 'hi' ? 'लाइव डेटा लोड हो रहा है...' : 'Loading live data...'}</Text>
             </View>
-            <Text style={styles.trendLabel}>
-              {selectedLanguage === 'hi' ? 'कल से' : 'from yesterday'}
-            </Text>
-          </View>
+          ) : error ? (
+            <Text style={styles.errorText}>{error}</Text>
+          ) : (
+            <>
+              <View style={styles.priceBody}>
+                <Text style={styles.priceValue}>{currentPrice !== null ? `₹${currentPrice}` : '--'}</Text>
+                <Text style={styles.priceUnit}>{selectedLanguage === 'hi' ? '/क्विंटल' : '/Quintal'}</Text>
+              </View>
+              <View style={styles.priceTrend}>
+                {priceChangePct !== null ? (
+                  <>
+                    <View style={styles.trendUp}>
+                      {priceChangePct >= 0 ? (
+                        <TrendingUp size={16} color={COLORS.success} />
+                      ) : (
+                        <TrendingDown size={16} color={COLORS.error} />
+                      )}
+                      <Text style={[styles.trendText, { color: priceChangePct >= 0 ? COLORS.success : COLORS.error }]}>
+                        {priceChangePct >= 0 ? '+' : ''}{priceChangePct.toFixed(1)}%
+                      </Text>
+                    </View>
+                    <Text style={styles.trendLabel}>{selectedLanguage === 'hi' ? 'पिछले दिन से' : 'from previous day'}</Text>
+                  </>
+                ) : (
+                  <Text style={styles.trendLabel}>{selectedLanguage === 'hi' ? 'परिवर्तन डेटा उपलब्ध नहीं' : 'Change data unavailable'}</Text>
+                )}
+              </View>
+            </>
+          )}
         </View>
 
-        {/* Quick Actions */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>
-            {selectedLanguage === 'hi' ? 'त्वरित कार्य' : 'Quick Actions'}
-          </Text>
+          <Text style={styles.sectionTitle}>{selectedLanguage === 'hi' ? 'त्वरित कार्य' : 'Quick Actions'}</Text>
           <View style={styles.actionsGrid}>
-            <TouchableOpacity
-              style={styles.actionCard}
-              onPress={() => navigation.navigate('Voice')}
-            >
+            <TouchableOpacity style={styles.actionCard} onPress={() => navigation.navigate('Voice')}>
               <View style={styles.actionIcon}>
                 <Text style={styles.emoji}>🎤</Text>
               </View>
-              <Text style={styles.actionLabel}>
-                {selectedLanguage === 'hi' ? 'आवाज़ खोज' : 'Voice Search'}
-              </Text>
+              <Text style={styles.actionLabel}>{selectedLanguage === 'hi' ? 'आवाज़ खोज' : 'Voice Search'}</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity
-              style={styles.actionCard}
-              onPress={() => navigation.navigate('Mandi')}
-            >
+            <TouchableOpacity style={styles.actionCard} onPress={() => navigation.navigate('Mandi')}>
               <View style={styles.actionIcon}>
                 <Text style={styles.emoji}>📍</Text>
               </View>
-              <Text style={styles.actionLabel}>
-                {selectedLanguage === 'hi' ? 'मंडी खोजें' : 'Find Mandis'}
-              </Text>
+              <Text style={styles.actionLabel}>{selectedLanguage === 'hi' ? 'मंडी खोजें' : 'Find Mandis'}</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity
-              style={styles.actionCard}
-              onPress={() => navigation.navigate('Charts')}
-            >
+            <TouchableOpacity style={styles.actionCard} onPress={() => navigation.navigate('Charts')}>
               <View style={styles.actionIcon}>
                 <Text style={styles.emoji}>📊</Text>
               </View>
-              <Text style={styles.actionLabel}>
-                {selectedLanguage === 'hi' ? 'मूल्य चार्ट' : 'Price Charts'}
-              </Text>
+              <Text style={styles.actionLabel}>{selectedLanguage === 'hi' ? 'मूल्य चार्ट' : 'Price Charts'}</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity
-              style={styles.actionCard}
-              onPress={() => navigation.navigate('Settings')}
-            >
+            <TouchableOpacity style={styles.actionCard} onPress={() => navigation.navigate('Settings')}>
               <View style={styles.actionIcon}>
                 <Text style={styles.emoji}>⚙️</Text>
               </View>
-              <Text style={styles.actionLabel}>
-                {selectedLanguage === 'hi' ? 'सेटिंग्स' : 'Settings'}
-              </Text>
+              <Text style={styles.actionLabel}>{selectedLanguage === 'hi' ? 'सेटिंग्स' : 'Settings'}</Text>
             </TouchableOpacity>
           </View>
         </View>
 
-        {/* Best Mandi Card */}
-        <TouchableOpacity
-          style={styles.mandiCard}
-          onPress={() => navigation.navigate('Mandi')}
-        >
+        <TouchableOpacity style={styles.mandiCard} onPress={() => navigation.navigate('Mandi')}>
           <View style={styles.mandiHeader}>
             <View style={styles.mandiIcon}>
               <MapPin size={20} color={COLORS.primary} />
             </View>
             <View style={styles.mandiInfo}>
-              <Text style={styles.mandiName}>Azadpur Mandi</Text>
+              <Text style={styles.mandiName}>{bestMandi?.name || (selectedLanguage === 'hi' ? 'डेटा उपलब्ध नहीं' : 'No mandi data')}</Text>
               <Text style={styles.mandiLocation}>
-                {selectedLanguage === 'hi' ? 'दिल्ली • 12 किमी' : 'Delhi • 12 km'}
+                {bestMandi ? `${bestMandi.district}, ${bestMandi.state}` : '--'}
               </Text>
             </View>
             <ChevronRight size={20} color={COLORS.textSecondary} />
           </View>
           <View style={styles.mandiPrice}>
-            <Text style={styles.mandiPriceValue}>₹1,260</Text>
-            <Text style={styles.mandiPriceLabel}>
-              {selectedLanguage === 'hi' ? 'सर्वोत्तम मूल्य' : 'Best Price'}
-            </Text>
+            <Text style={styles.mandiPriceValue}>{bestMandi?.price ? `₹${bestMandi.price}` : '--'}</Text>
+            <Text style={styles.mandiPriceLabel}>{selectedLanguage === 'hi' ? 'सर्वोत्तम मूल्य' : 'Best Price'}</Text>
           </View>
         </TouchableOpacity>
 
-        {/* Alerts Section */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>
-              {selectedLanguage === 'hi' ? 'हालिया अलर्ट' : 'Recent Alerts'}
-            </Text>
-            <TouchableOpacity>
-              <Text style={styles.seeAll}>View All</Text>
-            </TouchableOpacity>
+            <Text style={styles.sectionTitle}>{selectedLanguage === 'hi' ? 'अलर्ट' : 'Alerts'}</Text>
           </View>
-
           <View style={styles.alertCard}>
             <View style={styles.alertIndicator} />
             <View style={styles.alertContent}>
-              <Text style={styles.alertTitle}>
-                {selectedLanguage === 'hi' ? 'भारी बारिश चेतावनी' : 'Heavy Rain Alert'}
-              </Text>
+              <Text style={styles.alertTitle}>{selectedLanguage === 'hi' ? 'लाइव अलर्ट इंटीग्रेशन प्रगति पर' : 'Live alerts integration in progress'}</Text>
               <Text style={styles.alertMessage}>
-                {selectedLanguage === 'hi' ? '2 दिनों में अपेक्षित। जल्दी कटाई करें।' : 'Expected in 2 days. Harvest soon.'}
-              </Text>
-            </View>
-          </View>
-
-          <View style={styles.alertCard}>
-            <View style={[styles.alertIndicator, styles.alertIndicatorSuccess]} />
-            <View style={styles.alertContent}>
-              <Text style={styles.alertTitle}>
-                {selectedLanguage === 'hi' ? 'बाजार ऊपर की ओर' : 'Market Up-trend'}
-              </Text>
-              <Text style={styles.alertMessage}>
-                {selectedLanguage === 'hi' ? 'प्याज की कीमतें बढ़ रही हैं।' : 'Onion prices rising nearby.'}
+                {selectedLanguage === 'hi'
+                  ? 'वर्तमान बैकएंड बिल्ड में अलर्ट एपीआई सक्षम नहीं है।'
+                  : 'Alerts API is not enabled in the current backend build.'}
               </Text>
             </View>
           </View>
@@ -264,10 +327,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 12,
   },
-  seeAll: {
-    fontSize: 14,
-    color: COLORS.primary,
-  },
   commodityScroll: {
     flexDirection: 'row',
   },
@@ -310,6 +369,18 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: COLORS.textSecondary,
   },
+  loadingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginVertical: 12,
+  },
+  loadingText: {
+    color: COLORS.textSecondary,
+  },
+  errorText: {
+    color: COLORS.error,
+  },
   priceBody: {
     flexDirection: 'row',
     alignItems: 'baseline',
@@ -338,7 +409,6 @@ const styles = StyleSheet.create({
   trendText: {
     fontSize: 16,
     fontWeight: '600',
-    color: COLORS.success,
   },
   trendLabel: {
     fontSize: 14,
@@ -381,6 +451,7 @@ const styles = StyleSheet.create({
     padding: 16,
     borderWidth: 1,
     borderColor: COLORS.border,
+    marginBottom: 24,
   },
   mandiHeader: {
     flexDirection: 'row',
@@ -428,18 +499,14 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.card,
     borderRadius: 12,
     padding: 16,
-    marginBottom: 8,
     borderWidth: 1,
     borderColor: COLORS.border,
   },
   alertIndicator: {
     width: 4,
     borderRadius: 2,
-    backgroundColor: COLORS.error,
+    backgroundColor: COLORS.warning,
     marginRight: 12,
-  },
-  alertIndicatorSuccess: {
-    backgroundColor: COLORS.success,
   },
   alertContent: {
     flex: 1,

@@ -15,11 +15,12 @@ class Settings(BaseSettings):
         env_file=".env",
         env_file_encoding="utf-8",
         case_sensitive=False,
+        extra="ignore",
     )
     
     # Application
-    APP_NAME: str = "Agri-Analytics API"
-    PROJECT_NAME: str = "Agri-Analytics API"  # Alias for compatibility
+    APP_NAME: str = "KisaanAI API"
+    PROJECT_NAME: str = "KisaanAI API"  # Alias for compatibility
     APP_VERSION: str = "1.0.0"
     DEBUG: bool = True  # Enable debug mode by default for development
     ENVIRONMENT: str = "development"
@@ -65,7 +66,6 @@ class Settings(BaseSettings):
     MINIO_ACCESS_KEY: str = "minioadmin"
     MINIO_SECRET_KEY: str = "minioadmin"
     MINIO_BUCKET: str = "agri-data"
-    MINIO_BUCKET: str = "agri-data"
     MINIO_SECURE: bool = False
 
     # Supabase (Optional)
@@ -74,6 +74,8 @@ class Settings(BaseSettings):
     
     # Hugging Face
     HF_TOKEN: Optional[str] = None
+    HF_DISEASE_MODEL_ID: str = "linkanjarad/mobilenet_v2_1.0_224-plant-disease-identification"
+    HF_TIMEOUT_SECONDS: int = 20
     
     # Rate Limiting
     RATE_LIMIT_REQUESTS: int = 100
@@ -92,6 +94,11 @@ class Settings(BaseSettings):
     GROQ_API_KEY: str = ""
     GROQ_MODEL: str = "llama-3.3-70b-versatile"  # Alternative: mixtral-8x7b-32768
     
+    # AWS (Amazon Polly TTS)
+    AWS_ACCESS_KEY_ID: str = ""
+    AWS_SECRET_ACCESS_KEY: str = ""
+    AWS_REGION: str = "ap-south-1"
+
     # Voice API Settings
     SARVAM_API_KEY: str = ""
     ELEVENLABS_API_KEY: str = ""

@@ -12,13 +12,18 @@ import asyncio
 import importlib.util
 import json
 import re
+import sys
 import time
 from pathlib import Path
 from typing import Any
 
+BACKEND_DIR = Path(__file__).resolve().parents[1]
+if str(BACKEND_DIR) not in sys.path:
+    sys.path.insert(0, str(BACKEND_DIR))
+
 
 def load_ai_service_getter():
-    module_path = Path(__file__).resolve().parents[1] / "app" / "services" / "ai_service.py"
+    module_path = BACKEND_DIR / "app" / "services" / "ai_service.py"
     spec = importlib.util.spec_from_file_location("voice_ai_service_local_hard", module_path)
     if spec is None or spec.loader is None:
         raise RuntimeError(f"Failed to load module spec for {module_path}")

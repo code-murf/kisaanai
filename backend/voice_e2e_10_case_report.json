@@ -2,13 +2,13 @@
   "stt_smoke": {
     "ok": true,
     "file": "C:\\Users\\Asus\\Desktop\\Aiforbharat\\backend\\test_audio.wav",
-    "latency_ms": 1027.53,
+    "latency_ms": 1009.15,
     "transcript_preview": " झाल झाल",
     "attempts": [
       {
         "file": "C:\\Users\\Asus\\Desktop\\Aiforbharat\\backend\\test_audio.wav",
         "ok": true,
-        "latency_ms": 1027.53,
+        "latency_ms": 1009.15,
         "transcript_preview": " झाल झाल"
       }
     ]
@@ -20,7 +20,7 @@
       "query": "What can this AgriBharat platform do for farmers? Mention mandi prices, weather, disease help, and voice support.",
       "response_ok": true,
       "keyword_ok": true,
-      "tts_ok": true,
+      "tts_ok": false,
       "hit_count": 6,
       "min_hits": 3,
       "hit_terms": [
@@ -31,9 +31,9 @@
         "voice",
         "farm"
       ],
-      "llm_latency_ms": 381.37,
-      "tts_latency_ms": 7414.78,
-      "response_preview": "AgriBharat helps farmers by providing mandi prices, weather updates, and disease guidance. For specific needs, ask a voice question, it gets transcribed, and an AI response is given. You then hear the answer via audio pl"
+      "llm_latency_ms": 671.67,
+      "tts_latency_ms": 575.97,
+      "response_preview": "AgriBharat helps farmers in many ways. You can ask voice questions and get answers. For prices, we suggest checking local mandi rates. You can ask about weather and we'll guide you to check forecasts. If you have disease"
     },
     {
       "id": "P2",
@@ -41,17 +41,19 @@
       "query": "I am in Maharashtra. How can I use this platform daily from morning to evening to decide selling and crop care?",
       "response_ok": true,
       "keyword_ok": true,
-      "tts_ok": true,
-      "hit_count": 3,
+      "tts_ok": false,
+      "hit_count": 5,
       "min_hits": 2,
       "hit_terms": [
+        "sell",
         "mandi",
         "weather",
-        "crop"
+        "crop",
+        "advice"
       ],
-      "llm_latency_ms": 389.51,
-      "tts_latency_ms": 5219.98,
-      "response_preview": "You can ask me voice questions, I'll get transcribed, then AI will respond, and you'll hear the answer via audio playback. Check local mandi rates, ask about crop care, and more. Start your day by asking about weather fo"
+      "llm_latency_ms": 537.17,
+      "tts_latency_ms": 481.56,
+      "response_preview": "To use this platform daily, start by asking a voice question in the morning about weather or market prices. Your question will be transcribed, and I'll provide an AI response. You'll then hear the answer through audio pl"
     },
     {
       "id": "P3",
@@ -59,7 +61,7 @@
       "query": "Is app se mandi bhaav, mausam aur fasal bimari kaise check kar sakte hain? Kadam batao.",
       "response_ok": true,
       "keyword_ok": true,
-      "tts_ok": true,
+      "tts_ok": false,
       "hit_count": 4,
       "min_hits": 2,
       "hit_terms": [
@@ -68,9 +70,9 @@
         "bimari",
         "fasal"
       ],
-      "llm_latency_ms": 503.93,
-      "tts_latency_ms": 7344.22,
-      "response_preview": "Aap voice question puch sakte hain, humari AI uska jawab degi, transcription hoga, phir audio playback se aapko jawab milega. Mandi bhaav ke liye local mandi rates check karein, mausam ke liye weather forecast dekhein, a"
+      "llm_latency_ms": 768.46,
+      "tts_latency_ms": 462.85,
+      "response_preview": "Aapko app mein voice question puchhna hai, jiska uttar AI dwara diya jayega. Aap mandi bhaav ke liye local mandi rates check kar sakte hain, mausam ke liye weather forecast dekh sakte hain, aur fasal bimari ke liye initi"
     },
     {
       "id": "P4",
@@ -78,18 +80,19 @@
       "query": "Give me a short workflow to ask voice questions and get audio replies in Hindi for farmers.",
       "response_ok": true,
       "keyword_ok": true,
-      "tts_ok": true,
-      "hit_count": 4,
+      "tts_ok": false,
+      "hit_count": 5,
       "min_hits": 2,
       "hit_terms": [
         "voice",
         "audio",
         "hindi",
-        "question"
+        "question",
+        "reply"
       ],
-      "llm_latency_ms": 273.29,
-      "tts_latency_ms": 4596.64,
-      "response_preview": "Bhai, you can ask voice questions, it will be transcribed, then AI will respond, and you'll get audio playback in Hindi, helping you easily understand."
+      "llm_latency_ms": 327.43,
+      "tts_latency_ms": 491.67,
+      "response_preview": "To ask voice questions and get audio replies, follow these steps: \nSpeak your question, it will be transcribed, then an AI will generate a response, \nwhich will be played back to you as an audio reply in Hindi."
     },
     {
       "id": "A1",
@@ -97,18 +100,20 @@
       "query": "Explain Kharif vs Rabi crops in India with examples and sowing windows.",
       "response_ok": true,
       "keyword_ok": true,
-      "tts_ok": true,
-      "hit_count": 4,
+      "tts_ok": false,
+      "hit_count": 6,
       "min_hits": 3,
       "hit_terms": [
         "kharif",
         "rabi",
         "india",
+        "sowing",
+        "rice",
         "wheat"
       ],
-      "llm_latency_ms": 351.7,
-      "tts_latency_ms": 5888.28,
-      "response_preview": "In India, Kharif crops like paddy, maize, and soybean are sown during monsoon (June to September). Rabi crops like wheat, gram, and mustard are sown during winter (October to February)."
+      "llm_latency_ms": 392.27,
+      "tts_latency_ms": 572.44,
+      "response_preview": "In India, Kharif crops are sown during monsoon (June to September), like rice, maize, and soybean. Rabi crops are sown in winter (October to February), like wheat, mustard, and gram. Check local sowing windows for specif"
     },
     {
       "id": "A2",
@@ -116,18 +121,20 @@
       "query": "Current wheat MSP in India and how should farmers decide mandi sale timing?",
       "response_ok": true,
       "keyword_ok": true,
-      "tts_ok": true,
-      "hit_count": 4,
+      "tts_ok": false,
+      "hit_count": 6,
       "min_hits": 3,
       "hit_terms": [
         "wheat",
+        "msp",
+        "india",
         "mandi",
         "sale",
         "price"
       ],
-      "llm_latency_ms": 231.24,
-      "tts_latency_ms": 5607.58,
-      "response_preview": "Check local mandi rates for current wheat prices. For mandi sale timing, track market trends and government announcements to decide when to sell your wheat for the best price."
+      "llm_latency_ms": 427.64,
+      "tts_latency_ms": 492.17,
+      "response_preview": "The current wheat MSP in India is set by the government, but it's best to check local mandi rates for the most accurate information. For mandi sale timing, consider the market demand and prices. Generally, it's good to s"
     },
     {
       "id": "A3",
@@ -135,7 +142,7 @@
       "query": "Punjab mein gehu mein yellow rust ke lakshan aur turant upay batao.",
       "response_ok": true,
       "keyword_ok": true,
-      "tts_ok": true,
+      "tts_ok": false,
       "hit_count": 4,
       "min_hits": 2,
       "hit_terms": [
@@ -144,9 +151,9 @@
         "lakshan",
         "fungicide"
       ],
-      "llm_latency_ms": 415.33,
-      "tts_latency_ms": 5420.91,
-      "response_preview": "Gehu mein yellow rust ke lakshan hain pili ya peeli dhabbiyan. Turant upay ke liye fungicide ka upyog karein, lekin ghanste samasyaon ke liye kisan visheshagya se salah lein."
+      "llm_latency_ms": 673.8,
+      "tts_latency_ms": 479.97,
+      "response_preview": "Punjab mein gehu mein yellow rust ki samasya hoti hai. Iske lakshan hain: pattiyo par peele rang ke chitte dhabbe, pattey ka rang badalna, aur bohot kam upaj. Turant upay ke liye, kisan ko fungicide kaprayog karna chahiy"
     },
     {
       "id": "A4",
@@ -154,16 +161,17 @@
       "query": "My cotton crop in Maharashtra has pink bollworm risk. Give integrated pest management steps.",
       "response_ok": true,
       "keyword_ok": true,
-      "tts_ok": true,
-      "hit_count": 2,
+      "tts_ok": false,
+      "hit_count": 3,
       "min_hits": 2,
       "hit_terms": [
         "pink bollworm",
-        "trap"
+        "trap",
+        "monitor"
       ],
-      "llm_latency_ms": 309.4,
-      "tts_latency_ms": 7932.07,
-      "response_preview": "For pink bollworm, use a mix of methods: plant resistant varieties, remove weeds, and use pheromone traps. Also, consider biological control and insecticides as a last resort. Consult an expert for serious issues."
+      "llm_latency_ms": 578.89,
+      "tts_latency_ms": 472.39,
+      "response_preview": "For pink bollworm, use a combination of methods. Plant resistant varieties, maintain field hygiene, and use pheromone traps. Also, apply insecticides and biological control methods like introducing natural predators. Kee"
     },
     {
       "id": "A5",
@@ -171,18 +179,20 @@
       "query": "For paddy in eastern India, suggest irrigation and fertilizer schedule for tillering to panicle stage.",
       "response_ok": true,
       "keyword_ok": true,
-      "tts_ok": true,
-      "hit_count": 4,
+      "tts_ok": false,
+      "hit_count": 6,
       "min_hits": 2,
       "hit_terms": [
         "paddy",
+        "irrigation",
         "fertilizer",
         "tillering",
-        "panicle"
+        "panicle",
+        "nitrogen"
       ],
-      "llm_latency_ms": 459.15,
-      "tts_latency_ms": 8519.71,
-      "response_preview": "For paddy in eastern India, irrigate every 4-5 days during tillering. Apply urea at 20-25 kg/acre during tillering and 30-35 kg/acre at panicle initiation. Also, add phosphorus and potassium fertilizers as per soil test "
+      "llm_latency_ms": 363.07,
+      "tts_latency_ms": 665.83,
+      "response_preview": "For paddy in eastern India, irrigate every 4-5 days during tillering and every 7-10 days during panicle stage. Apply nitrogen-rich fertilizer at tillering, and phosphorus-potassium mix at panicle initiation. Adjust irrig"
     },
     {
       "id": "A6",
@@ -190,7 +200,7 @@
       "query": "PM-KISAN aur Fasal Bima Yojana ka fayda kya hai, apply kaise karein?",
       "response_ok": true,
       "keyword_ok": true,
-      "tts_ok": true,
+      "tts_ok": false,
       "hit_count": 4,
       "min_hits": 2,
       "hit_terms": [
@@ -199,16 +209,16 @@
         "yojana",
         "apply"
       ],
-      "llm_latency_ms": 436.06,
-      "tts_latency_ms": 9093.07,
-      "response_preview": "PM-KISAN aur Fasal Bima Yojana se kisanon ko arthik madad milti hai. PM-KISAN mein 6000 rupees milte hain, Fasal Bima se fasal nuksan ka bima hota hai. Online apply kar sakte hain, ya official website par jaakar jaankari"
+      "llm_latency_ms": 409.05,
+      "tts_latency_ms": 449.71,
+      "response_preview": "PM-KISAN aur Fasal Bima Yojana se kisanon ko finanical madad milti hai. PM-KISAN ke liye aap online apply kar sakte hain, official website par jayein aur form bharein. Fasal Bima Yojana ke liye bank ya local agriculture "
     }
   ],
   "summary": {
     "total_cases": 10,
     "response_pass": 10,
     "keyword_pass": 10,
-    "tts_pass": 10,
-    "full_pass": 10
+    "tts_pass": 0,
+    "full_pass": 0
   }
 }

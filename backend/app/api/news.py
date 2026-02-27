@@ -1,8 +1,17 @@
+﻿from datetime import timedelta
 from typing import List, Optional
-from fastapi import APIRouter
+
+from fastapi import APIRouter, Depends
 from pydantic import BaseModel
+from sqlalchemy import func, select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.database import get_db
+from app.models.commodity import Commodity
+from app.models.price import Price
 
 router = APIRouter()
+
 
 class NewsItem(BaseModel):
     id: int
@@ -15,51 +24,87 @@ class NewsItem(BaseModel):
     image_url: str
     video_url: Optional[str] = None
 
-@router.get("/news", response_model=List[NewsItem])
-def get_news():
-    return [
-        {
-            "id": 1,
-            "title": "Government Announces MSP Hike for Kharif Crops 2024",
-            "excerpt": "The Cabinet Committee on Economic Affairs has approved a significant increase in the Minimum Support Price for paddy and pulses to boost farmer income.",
-            "date": "Feb 15, 2026",
-            "source": "PIB India",
-            "category": "Policy",
-            "color": "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
-            "image_url": "https://images.unsplash.com/photo-1586771107445-d3ca888129ff?q=80&w=800&auto=format&fit=crop",
-            "video_url": None
-        },
-        {
-            "id": 2,
-            "title": "Heavy Rainfall Alert: Orange Warning for Maharashtra & Gujarat",
-            "excerpt": "IMD forecasts heavy to very heavy rainfall in isolated places. Farmers are advised to ensure proper drainage in fields to prevent waterlogging.",
-            "date": "Feb 14, 2026",
-            "source": "IMD Weather",
-            "category": "Weather Alert",
-            "color": "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
-            "image_url": "https://images.unsplash.com/photo-1514632542131-add7d86241a8?q=80&w=800&auto=format&fit=crop",
-            "video_url": "https://cdn.pixabay.com/video/2023/10/12/184734-874249122_large.mp4"
-        },
-        {
-            "id": 3,
-            "title": "Onion Prices Surge by 20% in Nasik Mandi",
-            "excerpt": "Due to supply chain disruptions, onion prices have seen a sharp rise. Experts predict prices to stabilize within the next two weeks as new stock arrives.",
-            "date": "Feb 12, 2026",
-            "source": "Mandi News",
-            "category": "Market Trend",
-            "color": "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
-            "image_url": "https://images.unsplash.com/photo-1488459716781-31db52582fe9?q=80&w=800&auto=format&fit=crop",
-            "video_url": None
-        },
-        {
-            "id": 4,
-            "title": "New Subsidy Scheme for Drip Irrigation Systems",
-            "excerpt": "State government launches 50% subsidy scheme for adopting micro-irrigation technologies. Applications open from March 1st.",
-            "date": "Feb 10, 2026",
-            "source": "Agri Dept",
-            "category": "Subsidy",
-            "color": "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400",
-            "image_url": "https://images.unsplash.com/photo-1560493676-04071c5f467b?q=80&w=800&auto=format&fit=crop",
-            "video_url": None
-        }
+
+@router.get('/news', response_model=List[NewsItem])
+async def get_news(db: AsyncSession = Depends(get_db)):
+    latest_date = await db.scalar(select(func.max(Price.price_date)))
+    if not latest_date:
+        return []
+
+    previous_date = await db.scalar(
+        select(func.max(Price.price_date)).where(Price.price_date < latest_date)
+    )
+
+    latest_rows = await db.execute(
+        select(Price.commodity_id, func.avg(Price.modal_price).label('avg_price'))
+        .where(Price.price_date == latest_date)
+        .group_by(Price.commodity_id)
+    )
+    latest_map = {row.commodity_id: float(row.avg_price) for row in latest_rows if row.avg_price is not None}
+
+    prev_map = {}
+    if previous_date:
+        prev_rows = await db.execute(
+            select(Price.commodity_id, func.avg(Price.modal_price).label('avg_price'))
+            .where(Price.price_date == previous_date)
+            .group_by(Price.commodity_id)
+        )
+        prev_map = {row.commodity_id: float(row.avg_price) for row in prev_rows if row.avg_price is not None}
+
+    if not latest_map:
+        return []
+
+    commodity_ids = list(latest_map.keys())
+    commodity_rows = await db.execute(select(Commodity.id, Commodity.name).where(Commodity.id.in_(commodity_ids)))
+    commodity_name_map = {row.id: row.name for row in commodity_rows}
+
+    insights = []
+    for commodity_id, current_price in latest_map.items():
+        prev_price = prev_map.get(commodity_id)
+        if prev_price and prev_price > 0:
+            change_pct = ((current_price - prev_price) / prev_price) * 100.0
+        else:
+            change_pct = 0.0
+        insights.append((commodity_id, current_price, change_pct))
+
+    insights.sort(key=lambda item: abs(item[2]), reverse=True)
+
+    palette = [
+        'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400',
+        'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
+        'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
+        'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400',
     ]
+    image_urls = [
+        'https://images.unsplash.com/photo-1464226184884-fa280b87c399?q=80&w=800&auto=format&fit=crop',
+        'https://images.unsplash.com/photo-1500382017468-9049fed747ef?q=80&w=800&auto=format&fit=crop',
+        'https://images.unsplash.com/photo-1488459716781-31db52582fe9?q=80&w=800&auto=format&fit=crop',
+        'https://images.unsplash.com/photo-1589923158776-cb4485d99fd6?q=80&w=800&auto=format&fit=crop',
+    ]
+
+    items: List[NewsItem] = []
+    for idx, (commodity_id, current_price, change_pct) in enumerate(insights[:4], start=1):
+        commodity_name = commodity_name_map.get(commodity_id, f'Commodity {commodity_id}')
+        direction = 'rose' if change_pct >= 0 else 'fell'
+        abs_change = abs(change_pct)
+        title = f'{commodity_name} prices {direction} {abs_change:.1f}% in mandi markets'
+        excerpt = (
+            f'Average mandi modal price for {commodity_name} is ₹{current_price:.0f} on {latest_date.isoformat()}. '
+            f'Change versus previous trading day: {change_pct:+.1f}%.'
+        )
+
+        items.append(
+            NewsItem(
+                id=idx,
+                title=title,
+                excerpt=excerpt,
+                date=latest_date.isoformat(),
+                source='KisaanAI Market Data',
+                category='Market Trend',
+                color=palette[(idx - 1) % len(palette)],
+                image_url=image_urls[(idx - 1) % len(image_urls)],
+                video_url=None,
+            )
+        )
+
+    return items

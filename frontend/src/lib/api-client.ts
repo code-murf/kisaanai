@@ -1,5 +1,5 @@
 /**
- * API Client for Agri-Analytics Backend
+ * API Client for KisaanAI Backend
  * Handles all HTTP requests with proper error handling and token management
  */
 
@@ -134,10 +134,10 @@ interface AuthResponse {
 // Auth API
 export const authApi = {
   sendOTP: (phone: string) =>
-    api.post("/auth/send-otp", { phone_number: phone }, false),
+    api.post("/auth/otp/request", { phone_number: phone, purpose: "login" }, false),
 
   verifyOTP: (phone: string, otp: string) =>
-    api.post<AuthResponse>("/auth/verify-otp", { phone_number: phone, otp_code: otp }, false),
+    api.post<AuthResponse>("/auth/otp/verify", { phone_number: phone, otp_code: otp }, false),
 
   refreshToken: (refreshToken: string) =>
     api.post<AuthResponse>("/auth/refresh", { refresh_token: refreshToken }, false),
@@ -148,7 +148,7 @@ export const authApi = {
 // Commodities API
 export const commodityApi = {
   list: (params?: { page?: number; limit?: number; search?: string }) =>
-    api.get("/commodities" + (params ? `?${new URLSearchParams(params as any)}` : "")),
+    api.get<{ items: any[] }>("/commodities" + (params ? `?${new URLSearchParams(params as any)}` : "")).then((r) => r.items),
 
   get: (id: number) => api.get(`/commodities/${id}`),
 }
@@ -156,15 +156,15 @@ export const commodityApi = {
 // Mandis API
 export const mandiApi = {
   list: (params?: { page?: number; limit?: number; state?: string; district?: string }) =>
-    api.get("/mandis" + (params ? `?${new URLSearchParams(params as any)}` : "")),
+    api.get<{ items: any[] }>("/mandis" + (params ? `?${new URLSearchParams(params as any)}` : "")).then((r) => r.items),
 
   get: (id: number) => api.get(`/mandis/${id}`),
 
   nearby: (lat: number, lon: number, radius: number = 50) =>
-    api.get(`/mandis/nearby?lat=${lat}&lon=${lon}&radius=${radius}`),
+    api.post("/mandis/nearby", { latitude: lat, longitude: lon, radius_km: radius, limit: 10 }),
 
   getBestPrice: (lat: number, lon: number, commodityId: number) =>
-    api.post(`/mandi/optimal`, { latitude: lat, longitude: lon, commodity_id: commodityId }),
+    api.post(`/routing/recommend`, { latitude: lat, longitude: lon, commodity_id: commodityId }),
 }
 
 // Prices API
@@ -174,36 +174,34 @@ export const priceApi = {
     mandi_id?: number
     start_date?: string
     end_date?: string
-  }) => api.get("/prices/history" + `?${new URLSearchParams(params as any)}`),
+  }) => api.get<{ items: any[] }>("/prices" + `?${new URLSearchParams(params as any)}`).then((r) => r.items),
 
   getCurrent: (commodityId: number, mandiId?: number) =>
-    api.get(`/prices/current?commodity_id=${commodityId}${mandiId ? `&mandi_id=${mandiId}` : ""}`),
+    mandiId
+      ? api.get(`/prices/current/mandi/${mandiId}`)
+      : api.get(`/prices/current/commodity/${commodityId}`),
 }
 
 // Forecast API
 export const forecastApi = {
   predict: (commodityId: number, mandiId: number, days: number = 7) =>
-    api.post("/forecast/predict", {
-      commodity_id: commodityId,
-      mandi_id: mandiId,
-      forecast_days: days,
-    }),
+    api.get(`/forecasts/${commodityId}/${mandiId}?horizon_days=${days}`),
 
   explainability: (commodityId: number, mandiId: number) =>
-    api.get(`/forecast/explain?commodity_id=${commodityId}&mandi_id=${mandiId}`),
+    api.get(`/forecasts/${commodityId}/${mandiId}?horizon_days=7&include_explanation=true`),
 }
 
 // Alerts API
 export const alertApi = {
-  list: () => api.get("/alerts"),
+  list: async () => [],
   create: (data: {
     commodity_id: number
     mandi_id?: number
     target_price: number
     condition: "above" | "below"
-  }) => api.post("/alerts", data),
-  delete: (id: number) => api.delete(`/alerts/${id}`),
-  update: (id: number, data: any) => api.patch(`/alerts/${id}`, data),
+  }) => Promise.reject(new ApiError("Alerts endpoint is not available in this backend build", 501)),
+  delete: (id: number) => Promise.reject(new ApiError("Alerts endpoint is not available in this backend build", 501)),
+  update: (id: number, data: any) => Promise.reject(new ApiError("Alerts endpoint is not available in this backend build", 501)),
 }
 
 export { ApiError }

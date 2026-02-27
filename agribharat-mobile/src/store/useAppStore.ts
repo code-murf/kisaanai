@@ -12,12 +12,12 @@ interface User {
 interface AppStore {
   user: User | null;
   selectedCommodity: string;
-  selectedLanguage: 'hi' | 'en';
+  selectedLanguage: 'hi' | 'en' | 'pa';
   isLoading: boolean;
 
   setUser: (user: User | null) => void;
   setSelectedCommodity: (commodity: string) => void;
-  setSelectedLanguage: (language: 'hi' | 'en') => void;
+  setSelectedLanguage: (language: 'hi' | 'en' | 'pa') => void;
   setLoading: (loading: boolean) => void;
   logout: () => void;
 }

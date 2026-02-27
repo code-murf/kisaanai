@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Real-time Voice Service - ChatGPT Pro Style
  *
  * Features:
@@ -54,7 +54,7 @@ export class RealtimeVoiceService {
   private recordingTimeout: NodeJS.Timeout | null = null;
 
   // System prompt for agricultural assistant
-  private systemPrompt = `You are AgriBharat AI, a friendly agricultural assistant for Indian farmers.
+  private systemPrompt = `You are KisaanAI, a friendly agricultural assistant for Indian farmers.
 
 Keep responses:
 - Under 60 words
@@ -62,11 +62,11 @@ Keep responses:
 - Practical and actionable
 - In the same language (Hindi/English)
 
-Current prices (₹/quintal):
-- Potato: ₹1250-1450
-- Wheat: ₹2150-2350
-- Rice: ₹3250-3550
-- Onion: ₹1550-1850
+Current prices (â‚¹/quintal):
+- Potato: â‚¹1250-1450
+- Wheat: â‚¹2150-2350
+- Rice: â‚¹3250-3550
+- Onion: â‚¹1550-1850
 
 Be helpful and friendly!`;
 
@@ -226,7 +226,7 @@ Be helpful and friendly!`;
 
     } catch (error: any) {
       console.error('AI error:', error);
-      return 'मैं आपकी मदद करना चाहता हूं। कृपया फिर से पूछें।';
+      return 'à¤®à¥ˆà¤‚ à¤†à¤ªà¤•à¥€ à¤®à¤¦à¤¦ à¤•à¤°à¤¨à¤¾ à¤šà¤¾à¤¹à¤¤à¤¾ à¤¹à¥‚à¤‚à¥¤ à¤•à¥ƒà¤ªà¤¯à¤¾ à¤«à¤¿à¤° à¤¸à¥‡ à¤ªà¥‚à¤›à¥‡à¤‚à¥¤';
     }
   }
 
@@ -236,7 +236,7 @@ Be helpful and friendly!`;
   async generateSpeech(text: string, language: 'hi' | 'en' = 'hi'): Promise<string> {
     try {
       const cleanText = text
-        .replace(/₹/g, 'रुपये')
+        .replace(/â‚¹/g, 'à¤°à¥à¤ªà¤¯à¥‡')
         .replace(/\*/g, '')
         .replace(/\n/g, '. ')
         .trim();

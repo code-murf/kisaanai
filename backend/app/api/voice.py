@@ -21,11 +21,17 @@ from app.database import get_db
 from app.api.auth import get_current_user
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.ext.asyncio import AsyncSession
+from pydantic import BaseModel
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/voice", tags=["Voice"])
 security = HTTPBearer()
+
+
+class TextVoiceRequest(BaseModel):
+    text: str
+    language: str = "hi-IN"
 
 
 async def _resolve_current_user(
@@ -159,6 +165,47 @@ async def voice_query(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Voice processing failed",
+        )
+
+
+@router.post("/text")
+async def text_voice_query(payload: TextVoiceRequest):
+    """
+    Process a text query using the same LLM->TTS voice pipeline.
+
+    This endpoint is used by web clients that already have text input
+    from browser speech recognition but still need a real backend response.
+    """
+    text = payload.text.strip()
+    if not text:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Text is required")
+
+    ai_service = get_ai_service()
+
+    try:
+        llm_response_data = await ai_service.process_voice_query(
+            transcribed_text=text,
+            language=payload.language,
+        )
+        response_text = llm_response_data.get("response")
+        if not response_text:
+            raise HTTPException(status_code=500, detail="Failed to generate response")
+
+        audio_base64 = await ai_service.text_to_speech(response_text, language_code=payload.language)
+
+        return {
+            "query": text,
+            "response": response_text,
+            "audio": audio_base64,
+            "language": payload.language,
+        }
+    except HTTPException:
+        raise
+    except Exception:
+        logger.exception("Text voice processing failed")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Text voice processing failed",
         )
 
 

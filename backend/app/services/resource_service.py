@@ -3,7 +3,7 @@ from typing import Dict, Any
 
 class ResourceService:
     def __init__(self):
-        # Mock Crop Coefficient (Kc) Data
+        # Baseline crop coefficients and fertilizer ratios used for calculations.
         self.crop_data = {
             "Wheat": {"kc_mid": 1.15, "stage_days": 120, "npk_ratio": "4:2:1"},
             "Rice": {"kc_mid": 1.20, "stage_days": 150, "npk_ratio": "4:2:1"},

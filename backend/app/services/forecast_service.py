@@ -480,71 +480,9 @@ class ForecastService:
         
         return forecasts
 
-
-    def _generate_mock_forecast(
-        self,
-        commodity_id: int,
-        mandi_id: int,
-        horizon_days: int,
-        include_explanation: bool = True
-    ) -> ForecastOutput:
-        """Generate mock forecast for demo purposes."""
-        import random
-        
-        # Mock base price
-        base_price = 2000 + (commodity_id * 100)
-        current_price = base_price + random.randint(-200, 200)
-        
-        # Mock prediction
-        trend_factor = random.choice([1.05, 0.95, 1.02, 0.98])
-        predicted_price = current_price * trend_factor
-        
-        price_change = predicted_price - current_price
-        price_change_pct = (price_change / current_price) * 100
-        
-        if price_change_pct > 2:
-            trend = "up"
-        elif price_change_pct < -2:
-            trend = "down"
-        else:
-            trend = "stable"
-            
-        explanation = None
-        if include_explanation:
-            explanation = {
-                "features": {
-                    "Seasonal Trend": 0.4,
-                    "Historical Price": 0.3,
-                    "Weather Impact": 0.2,
-                    "Supply Volume": 0.1
-                },
-                "text": f"Prices are expected to trend {trend} due to seasonal patterns and current supply volumes."
-            }
-            
-        return ForecastOutput(
-            commodity_id=commodity_id,
-            commodity_name=f"Commodity {commodity_id}",
-            mandi_id=mandi_id,
-            mandi_name=f"Mandi {mandi_id}",
-            state="Demo State",
-            current_price=round(current_price, 2),
-            predicted_price=round(predicted_price, 2),
-            price_change=round(price_change, 2),
-            price_change_pct=round(price_change_pct, 2),
-            horizon_days=horizon_days,
-            prediction_date=date.today(),
-            target_date=date.today() + timedelta(days=horizon_days),
-            confidence_lower=round(predicted_price * 0.9, 2),
-            confidence_upper=round(predicted_price * 1.1, 2),
-            confidence=0.85,
-            trend=trend,
-            explanation=explanation
-        )
-
 async def get_forecast_service(db: AsyncSession) -> ForecastService:
     """Get forecast service instance."""
     service = ForecastService(db=db)
-    # Don't fail if models missing in demo mode
     try:
         await service.load_models()
     except Exception as e:
