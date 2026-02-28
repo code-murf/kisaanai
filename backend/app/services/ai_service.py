@@ -1,17 +1,22 @@
 """
-Groq AI Service for AI-powered features.
+AI Service for AI-powered features.
+Uses AWS Bedrock (Claude 3) as primary LLM with GROQ as fallback.
 Provides crop disease diagnosis assistance, voice query processing,
 and natural language recommendations.
 """
 import aiohttp
+import asyncio
 import logging
 import re
 from typing import Optional, List, Dict, Any
+from cachetools import TTLCache
 
 from app.config import settings
 
 logger = logging.getLogger(__name__)
 
+# Global conversational state cache (TTL: 2 hours, max sessions: 1000)
+conversational_memory = TTLCache(maxsize=1000, ttl=7200)
 
 class GroqAIService:
     """
@@ -33,6 +38,10 @@ class GroqAIService:
         self.model = settings.GROQ_MODEL
         self.base_url = "https://api.groq.com/openai/v1/chat/completions"
         self._session: Optional[aiohttp.ClientSession] = None
+
+        # Voice/Chat uses GROQ only (fastest for text generation)
+        # Bedrock Claude is reserved for Crop Doctor vision analysis
+        self._bedrock = None
     
     @classmethod
     async def get_shared_session(cls) -> aiohttp.ClientSession:
@@ -302,7 +311,9 @@ class GroqAIService:
         system_prompt: Optional[str] = None,
     ) -> Optional[str]:
         """
-        Send a chat completion request to Groq API.
+        Send a chat completion request.
+        
+        Uses AWS Bedrock Claude as primary, GROQ as fallback.
         
         Args:
             messages: List of message dictionaries with 'role' and 'content'
@@ -313,11 +324,35 @@ class GroqAIService:
         Returns:
             The assistant's response content or None if failed
         """
+        # --- Primary: AWS Bedrock Claude ---
+        if self._bedrock:
+            try:
+                # Bedrock uses Messages API format (no 'system' role in messages)
+                bedrock_messages = [
+                    m for m in messages if m.get("role") != "system"
+                ]
+                loop = asyncio.get_event_loop()
+                result = await loop.run_in_executor(
+                    None,
+                    lambda: self._bedrock.chat_completion(
+                        messages=bedrock_messages,
+                        temperature=temperature,
+                        max_tokens=max_tokens,
+                        system_prompt=system_prompt,
+                    )
+                )
+                if result:
+                    logger.info("Bedrock Claude response OK")
+                    return result
+                logger.warning("Bedrock returned empty, falling back to GROQ")
+            except Exception as e:
+                logger.warning(f"Bedrock failed, falling back to GROQ: {e}")
+
+        # --- Fallback: GROQ ---
         if not self.is_configured():
-            logger.warning("Groq API key not configured")
+            logger.warning("Neither Bedrock nor GROQ API is configured")
             return None
         
-        # Prepare messages
         formatted_messages = []
         if system_prompt:
             formatted_messages.append({
@@ -409,6 +444,9 @@ Please provide diagnosis and treatment recommendations."""
         transcribed_text: str,
         context: Optional[Dict[str, Any]] = None,
         language: str = "en",
+        lat: Optional[float] = None,
+        lon: Optional[float] = None,
+        session_id: Optional[str] = None,
     ) -> Dict[str, Any]:
         """
         Process a voice query and generate a natural language response.
@@ -417,27 +455,25 @@ Please provide diagnosis and treatment recommendations."""
             transcribed_text: The transcribed voice input
             context: Optional context (location, user preferences, etc.)
             language: Response language
+            lat: User latitude
+            lon: User longitude
         
         Returns:
             Dictionary with response and metadata
         """
+        from app.services.weather_service import WeatherService
+        from app.services.price_service import PriceService
+        from app.database import async_session_maker
+        from sqlalchemy import select
+        from app.models.commodity import Commodity
+        from app.models.mandi import Mandi
+        import json
+
         system_prompt = """You are a helpful agricultural assistant for Indian farmers.
 Respond in a conversational, easy-to-understand manner.
 Keep responses concise but informative.
 Keep your final answer under 120 words and avoid markdown formatting.
-When asked about platform usage/workflow, explicitly mention voice question,
-transcription, AI response, and audio playback steps.
-If the question is about:
-- Prices: Mention checking local mandi rates
-- Weather: Suggest checking weather forecasts
-- Diseases: Provide initial guidance but recommend expert consultation for serious issues
-- Government schemes: Provide general information but suggest visiting official sources
- - Government scheme payment issues (DBT/PM-KISAN): give clear steps including
-   portal status check, eKYC/bank seeding verification, local agriculture office/CSC,
-   and helpline or email escalation.
- - Resource optimization / water allocation: provide a practical day-wise
-   schedule with priorities and one adjustment rule based on weather/soil moisture.
-
+CRITICAL: You have access to tools for weather, mandi prices, and web search. The location is automatically injected, so DO NOT ask the user for their location; just invoke the tools.
 Always be respectful and helpful. Use simple language that farmers can understand."""
 
         context_str = ""
@@ -448,23 +484,228 @@ Always be respectful and helpful. Use simple language that farmers can understan
             if "crops" in context:
                 context_parts.append(f"Grown crops: {', '.join(context['crops'])}")
             if context_parts:
-                context_str = f"\n\nContext: {'; '.join(context_parts)}"
+                context_str = f" Context: {'; '.join(context_parts)}"
 
         user_message = f"{transcribed_text}{context_str}"
 
-        response = await self.chat_completion(
-            messages=[{"role": "user", "content": user_message}],
-            temperature=0.7,
-            max_tokens=220,
-            system_prompt=system_prompt,
-        )
+        tools = [
+            {
+                "type": "function",
+                "function": {
+                    "name": "get_current_weather",
+                    "description": "Get current weather forecast for the user's location",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {},
+                        "required": []
+                    }
+                }
+            },
+            {
+                "type": "function",
+                "function": {
+                    "name": "get_mandi_prices",
+                    "description": "Get latest market (mandi) prices for commodities near the user",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "commodity_name": {
+                                "type": "string",
+                                "description": "Name of the crop/commodity MUST be in English (e.g., 'Potato', 'Cauliflower'). Translate from regional language if necessary."
+                            }
+                        },
+                        "required": ["commodity_name"]
+                    }
+                }
+            },
+            {
+                "type": "function",
+                "function": {
+                    "name": "search_web",
+                    "description": "Search the internet for general information, news, or farming techniques when internal knowledge is insufficient.",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "query": {"type": "string", "description": "The search query to look up on the internet"}
+                        },
+                        "required": ["query"]
+                    }
+                }
+            }
+        ]
         
+        # Load conversation history for current session
+        chat_history = []
+        if session_id and session_id in conversational_memory:
+            chat_history = conversational_memory.get(session_id, [])
+        
+        # Build messages list: System -> History -> New User Query
+        messages = [{"role": "system", "content": system_prompt}]
+        messages.extend(chat_history)
+        messages.append({"role": "user", "content": user_message})
+        
+        max_iterations = 3
+        final_response = None
+        
+        for _ in range(max_iterations):
+            payload = {
+                "model": self.model,
+                "messages": messages,
+                "temperature": 0.7,
+                "max_tokens": 250,
+                "tools": tools,
+                "tool_choice": "auto"
+            }
+            
+            try:
+                async with self.session.post(self.base_url, json=payload) as response:
+                    if response.status == 200:
+                        data = await response.json()
+                        message = data["choices"][0]["message"]
+                        messages.append(message)
+                        
+                        if message.get("tool_calls"):
+                            for tool_call in message["tool_calls"]:
+                                function_name = tool_call["function"]["name"]
+                                
+                                tool_result = "Tool execution failed."
+                                try:
+                                    function_args = json.loads(tool_call["function"]["arguments"])
+                                except Exception as e:
+                                    logger.error(f"JSON parsing error for {function_name}: {e}")
+                                    messages.append({
+                                        "tool_call_id": tool_call["id"],
+                                        "role": "tool",
+                                        "name": function_name,
+                                        "content": "Failed to parse tool arguments. Ensure valid JSON."
+                                    })
+                                    continue
+                                
+                                try:
+                                    if function_name == "get_current_weather":
+                                        if lat is None or lon is None:
+                                            tool_result = "Location (lat/lon) not provided by user device, cannot fetch weather."
+                                        else:
+                                            weather_service = WeatherService()
+                                            forecast = await weather_service.get_forecast(lat, lon, days=1)
+                                            if forecast:
+                                                today = forecast[0]
+                                                tool_result = f"Weather: {today.condition}, Max Temp: {today.temp_max}°C, Min Temp: {today.temp_min}°C, Rain: {today.rainfall_mm}mm. Advisory: {today.advisory}"
+                                                
+                                    elif function_name == "get_mandi_prices":
+                                        commodity_name = function_args.get("commodity_name", "").strip()
+                                        if not commodity_name:
+                                            tool_result = "Please specify a commodity."
+                                        else:
+                                            async with async_session_maker() as db:
+                                                comm_result = await db.execute(select(Commodity).where(Commodity.name.ilike(f"%{commodity_name}%")).limit(1))
+                                                commodity = comm_result.scalar_one_or_none()
+                                                
+                                                if not commodity:
+                                                    tool_result = f"Commodity '{commodity_name}' not found in database. Try standard English names."
+                                                else:
+                                                    price_service = PriceService(db)
+                                                    latest_prices = await price_service.get_current_prices_by_commodity(commodity_id=commodity.id, limit=3)
+                                                    if latest_prices:
+                                                        prices_info = []
+                                                        for p in latest_prices:
+                                                            prices_info.append(f"{p.commodity.name} at {p.mandi.name} ({p.mandi.district}): ₹{p.modal_price}/{p.commodity.unit}")
+                                                        tool_result = "\n".join(prices_info)
+                                                    else:
+                                                        tool_result = f"No recent prices found for {commodity.name}."
+                                                        
+                                    elif function_name == "search_web":
+                                        query = function_args.get("query", "")
+                                        if not query:
+                                            tool_result = "Empty search query."
+                                        else:
+                                            from duckduckgo_search import DDGS
+                                            results = DDGS().text(query, max_results=3)
+                                            if results:
+                                                tool_result = "\n".join([f"- {r['title']}: {r['body']}" for r in results])
+                                            else:
+                                                tool_result = "No web search results found."
+                                                
+                                except Exception as e:
+                                    logger.error(f"Error executing tool {function_name}: {e}")
+                                    tool_result = f"Error during tool execution: {str(e)}"
+                                                
+                                messages.append({
+                                    "tool_call_id": tool_call["id"],
+                                    "role": "tool",
+                                    "name": function_name,
+                                    "content": tool_result
+                                })
+                            # Continue loop to send tool results back to LLM
+                        else:
+                            final_response = message.get("content")
+                            break
+                    else:
+                        error_text = await response.text()
+                        logger.error(f"Groq tool call failed: {error_text}")
+                        # Fallback: if model failed to do tool calling (e.g. 400 Bad Request for JSON),
+                        # just ask the model for a regular completion without tools.
+                        payload.pop("tools", None)
+                        payload.pop("tool_choice", None)
+                        
+                        # Strip any tool roles from messages, as fallback doesn't support them if tools aren't provided
+                        clean_messages = [m for m in messages if m["role"] not in ["tool", "function", "assistant_tool_call"]]
+                        # Further clean assistant messages that have tool_calls
+                        for m in clean_messages:
+                            if m["role"] == "assistant" and "tool_calls" in m:
+                                m.pop("tool_calls", None)
+                        payload["messages"] = clean_messages
+                        
+                        try:
+                            async with self.session.post(self.base_url, json=payload) as fallback_response:
+                                if fallback_response.status == 200:
+                                    fallback_data = await fallback_response.json()
+                                    final_response = fallback_data["choices"][0]["message"].get("content")
+                                else:
+                                    logger.error(f"Fallback Groq call failed: {await fallback_response.text()}")
+                        except Exception as e:
+                            logger.error(f"Error during fallback request: {e}")
+                        break
+            except Exception as e:
+                logger.error(f"Error in tool calling loop: {e}")
+                break
+                
+        # If max iterations reached without getting a final natural language response
+        if final_response is None:
+            logger.warning("Max tool iterations reached or final_response is None. Forcing fallback completion.")
+            payload = {
+                "model": self.model,
+                "messages": [{"role": "system", "content": system_prompt}, {"role": "user", "content": user_message}],
+                "temperature": 0.7,
+                "max_tokens": 250
+            }
+            try:
+                async with self.session.post(self.base_url, json=payload) as response:
+                    if response.status == 200:
+                        data = await response.json()
+                        final_response = data["choices"][0]["message"].get("content")
+            except Exception as e:
+                logger.error(f"Error in final forced fallback: {e}")
+
+        if final_response is None:
+            final_response = "I encountered an error trying to process your request."
+
+        # Save to memory cache
+        if session_id and final_response:
+            # Append interaction
+            chat_history.append({"role": "user", "content": transcribed_text})
+            chat_history.append({"role": "assistant", "content": final_response})
+            # Keep only the last 10 messages (5 turns) to prevent token context explosion
+            if len(chat_history) > 10:
+                chat_history = chat_history[-10:]
+            conversational_memory[session_id] = chat_history
+
         return {
             "query": transcribed_text,
-            "response": response,
+            "response": final_response,
             "context": context,
             "language": language,
-            "success": response is not None,
+            "success": final_response is not None and final_response != "I encountered an error trying to process your request.",
         }
     
     async def get_farming_recommendations(

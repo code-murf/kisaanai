@@ -89,7 +89,7 @@ async def get_news(db: AsyncSession = Depends(get_db)):
         abs_change = abs(change_pct)
         title = f'{commodity_name} prices {direction} {abs_change:.1f}% in mandi markets'
         excerpt = (
-            f'Average mandi modal price for {commodity_name} is ₹{current_price:.0f} on {latest_date.isoformat()}. '
+            f'Average mandi modal price for {commodity_name} is Rs. {current_price:,.0f}/quintal on {latest_date.isoformat()}. '
             f'Change versus previous trading day: {change_pct:+.1f}%.'
         )
 

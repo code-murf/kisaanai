@@ -82,13 +82,7 @@ class Settings(BaseSettings):
     RATE_LIMIT_PERIOD_SECONDS: int = 60
     
     # CORS
-    CORS_ORIGINS: list[str] = [
-        "http://localhost:3000", 
-        "http://localhost:5173", 
-        "http://localhost:3003",
-        "https://kisaanai.vercel.app",
-        "https://*.vercel.app"
-    ]
+    CORS_ORIGINS: list[str] = ["*"]
     
     # AI/ML Settings
     GROQ_API_KEY: str = ""
@@ -98,6 +92,12 @@ class Settings(BaseSettings):
     AWS_ACCESS_KEY_ID: str = ""
     AWS_SECRET_ACCESS_KEY: str = ""
     AWS_REGION: str = "ap-south-1"
+
+    # AWS Bedrock
+    AWS_BEDROCK_REGION: str = "us-east-1"
+    AWS_BEDROCK_MODEL_ID: str = "anthropic.claude-3-haiku-20240307-v1:0"  # text LLM
+    AWS_BEDROCK_VISION_MODEL_ID: str = "us.amazon.nova-lite-v1:0"  # cheapest vision
+    AWS_BEDROCK_VISION_FALLBACK_ID: str = "anthropic.claude-3-haiku-20240307-v1:0"
 
     # Voice API Settings
     SARVAM_API_KEY: str = ""

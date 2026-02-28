@@ -32,6 +32,8 @@ security = HTTPBearer()
 class TextVoiceRequest(BaseModel):
     text: str
     language: str = "hi-IN"
+    lat: Optional[float] = None
+    lon: Optional[float] = None
 
 
 async def _resolve_current_user(
@@ -55,6 +57,8 @@ async def voice_query(
     file: UploadFile = File(...),
     language: str = Form(default="hi-IN"),
     session_id: Optional[str] = Form(default=None),
+    lat: Optional[float] = Form(default=None),
+    lon: Optional[float] = Form(default=None),
 ):
     """
     Process voice query: STT -> LLM -> TTS.
@@ -64,6 +68,8 @@ async def voice_query(
         language: Language code (e.g., hi-IN, en-IN)
         session_id: Optional session ID for barge-in support.
                    If provided, any previous request in this session will be cancelled.
+        lat: Optional latitude
+        lon: Optional longitude
     
     Returns:
         Dictionary containing:
@@ -118,7 +124,10 @@ async def voice_query(
             # 3. Process Query (LLM)
             llm_response_data = await ai_service.process_voice_query(
                 transcribed_text=transcript,
-                language=language
+                language=language,
+                lat=lat,
+                lon=lon,
+                session_id=session_id
             )
             
             response_text = llm_response_data.get("response")
@@ -186,6 +195,8 @@ async def text_voice_query(payload: TextVoiceRequest):
         llm_response_data = await ai_service.process_voice_query(
             transcribed_text=text,
             language=payload.language,
+            lat=payload.lat,
+            lon=payload.lon
         )
         response_text = llm_response_data.get("response")
         if not response_text:

@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { MapPin, Navigation, TrendingUp, TrendingDown, Search, Filter } from "lucide-react"
+import { MapPin, Navigation, TrendingUp, TrendingDown, Search, Filter, Loader2, AlertCircle } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -15,6 +15,29 @@ const MandiMap = dynamic(
   }
 )
 
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
+
+interface ApiMandi {
+  id: number
+  name: string
+  district: string
+  state: string
+  latitude: number
+  longitude: number
+  market_type: string
+  is_active: boolean
+}
+
+interface ApiPrice {
+  mandi_id: number
+  commodity_id: number
+  price_date: string
+  modal_price: number
+  min_price: number
+  max_price: number
+  arrival_qty: number
+}
+
 interface Mandi {
   id: number
   name: string
@@ -24,18 +47,26 @@ interface Mandi {
   trend: number
   distance: number
   arrival: number
+  latitude: number
+  longitude: number
 }
 
-const mandisData: Mandi[] = [
-  { id: 1, name: "Azadpur Mandi", district: "Delhi", state: "DL", price: 1240, trend: 2.5, distance: 12, arrival: 4500 },
-  { id: 2, name: "Okhla Mandi", district: "Delhi", state: "DL", price: 1210, trend: -1.2, distance: 15, arrival: 3200 },
-  { id: 3, name: "Ghazipur Mandi", district: "Delhi", state: "DL", price: 1260, trend: 3.8, distance: 18, arrival: 2800 },
-  { id: 4, name: "Keshopur Mandi", district: "Delhi", state: "DL", price: 1230, trend: 0.5, distance: 22, arrival: 1900 },
-  { id: 5, name: "Narela Mandi", district: "Delhi", state: "DL", price: 1195, trend: -2.1, distance: 35, arrival: 2400 },
-  { id: 6, name: "Bahadurgarh Mandi", district: "Jhajjar", state: "HR", price: 1250, trend: 4.2, distance: 28, arrival: 1600 },
-]
+function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371
+  const dLat = (lat2 - lat1) * Math.PI / 180
+  const dLon = (lon2 - lon1) * Math.PI / 180
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2)
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+  return Math.round(R * c)
+}
 
 export default function MandiPage() {
+  const [mandis, setMandis] = useState<Mandi[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState("")
   const [sortBy, setSortBy] = useState<"price" | "distance" | "arrival">("price")
   const [selectedMandi, setSelectedMandi] = useState<Mandi | null>(null)
@@ -51,16 +82,91 @@ export default function MandiPage() {
           })
         },
         () => {
-          console.log("Location access denied")
+          // Default to Delhi if location denied
+          setUserLocation({ lat: 28.6139, lng: 77.2090 })
         }
       )
+    } else {
+      setUserLocation({ lat: 28.6139, lng: 77.2090 })
     }
   }, [])
 
-  const filteredAndSortedMandis = mandisData
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true)
+
+        // Fetch mandis and latest prices in parallel
+        const [mandisRes, pricesRes] = await Promise.all([
+          fetch(`${API_BASE_URL}/api/v1/mandis?page_size=50`),
+          fetch(`${API_BASE_URL}/api/v1/prices?commodity_id=1&page_size=200`),
+        ])
+
+        if (!mandisRes.ok || !pricesRes.ok) {
+          throw new Error("Failed to fetch data from API")
+        }
+
+        const mandisData = await mandisRes.json()
+        const pricesData = await pricesRes.json()
+
+        const apiMandis: ApiMandi[] = mandisData.items || []
+        const apiPrices: ApiPrice[] = pricesData.items || []
+
+        // Group prices by mandi — get latest price and previous price for trend
+        const pricesByMandi = new Map<number, ApiPrice[]>()
+        for (const p of apiPrices) {
+          if (!pricesByMandi.has(p.mandi_id)) {
+            pricesByMandi.set(p.mandi_id, [])
+          }
+          pricesByMandi.get(p.mandi_id)!.push(p)
+        }
+
+        const userLat = userLocation?.lat || 28.6139
+        const userLng = userLocation?.lng || 77.2090
+
+        const enrichedMandis: Mandi[] = apiMandis.map((m) => {
+          const mandiPrices = pricesByMandi.get(m.id) || []
+          // Sort by date descending
+          mandiPrices.sort((a, b) => b.price_date.localeCompare(a.price_date))
+
+          const latestPrice = mandiPrices[0]?.modal_price || 0
+          const prevPrice = mandiPrices[1]?.modal_price || latestPrice
+          const trend = prevPrice > 0 ? ((latestPrice - prevPrice) / prevPrice) * 100 : 0
+          const totalArrival = mandiPrices[0]?.arrival_qty || 0
+          const distance = calculateDistance(userLat, userLng, m.latitude, m.longitude)
+
+          return {
+            id: m.id,
+            name: m.name,
+            district: m.district,
+            state: m.state,
+            price: Math.round(latestPrice),
+            trend: Math.round(trend * 10) / 10,
+            distance,
+            arrival: totalArrival,
+            latitude: m.latitude,
+            longitude: m.longitude,
+          }
+        })
+
+        setMandis(enrichedMandis)
+        setError(null)
+      } catch (err) {
+        console.error("Error fetching mandi data:", err)
+        setError(err instanceof Error ? err.message : "Failed to load mandi data")
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchData()
+  }, [userLocation])
+
+  const filteredAndSortedMandis = mandis
     .filter((mandi) =>
       mandi.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      mandi.district.toLowerCase().includes(searchTerm.toLowerCase())
+      mandi.district.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      mandi.state.toLowerCase().includes(searchTerm.toLowerCase())
     )
     .sort((a, b) => {
       if (sortBy === "price") return b.price - a.price
@@ -74,12 +180,31 @@ export default function MandiPage() {
     return { transportCost, netPrice }
   }
 
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <p className="text-muted-foreground">Loading mandis from live API...</p>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
+        <AlertCircle className="h-8 w-8 text-destructive" />
+        <p className="text-destructive font-medium">{error}</p>
+        <Button onClick={() => window.location.reload()}>Retry</Button>
+      </div>
+    )
+  }
+
   return (
     <div className="flex flex-col gap-6 p-4 md:p-8 pb-20">
       <header className="flex flex-col gap-4">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Nearby Mandis</h1>
-          <p className="text-muted-foreground">Find the best market to sell your produce</p>
+          <p className="text-muted-foreground">Find the best market to sell your produce — Live data from {mandis.length} mandis</p>
         </div>
 
         {/* Search Bar */}
@@ -87,7 +212,7 @@ export default function MandiPage() {
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             type="text"
-            placeholder="Search mandis by name or location..."
+            placeholder="Search mandis by name, state, or district..."
             className="pl-10"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -142,7 +267,7 @@ export default function MandiPage() {
             return (
               <Card
                 key={mandi.id}
-                className={`transition-all hover:shadow-md ${isBestPrice ? "border-primary ring-2 ring-primary/20" : ""}`}
+                className={`transition-all hover:shadow-md cursor-pointer ${isBestPrice ? "border-primary ring-2 ring-primary/20" : ""}`}
                 onClick={() => setSelectedMandi(mandi)}
               >
                 <CardHeader className="pb-3">
@@ -169,7 +294,7 @@ export default function MandiPage() {
                   <div className="grid grid-cols-3 gap-4">
                     <div>
                       <p className="text-xs text-muted-foreground">Price</p>
-                      <p className="text-lg font-bold">₹{mandi.price}<span className="text-sm font-normal text-muted-foreground">/Q</span></p>
+                      <p className="text-lg font-bold">₹{mandi.price.toLocaleString("en-IN")}<span className="text-sm font-normal text-muted-foreground">/Q</span></p>
                       <div className={`flex items-center text-xs ${mandi.trend >= 0 ? "text-green-500" : "text-red-500"}`}>
                         {mandi.trend >= 0 ? <TrendingUp className="h-3 w-3 mr-1" /> : <TrendingDown className="h-3 w-3 mr-1" />}
                         {mandi.trend > 0 ? "+" : ""}{mandi.trend}%
@@ -182,7 +307,7 @@ export default function MandiPage() {
                     </div>
                     <div>
                       <p className="text-xs text-muted-foreground">Net Earning</p>
-                      <p className="text-lg font-bold text-primary">₹{netPrice}</p>
+                      <p className="text-lg font-bold text-primary">₹{netPrice.toLocaleString("en-IN")}</p>
                       <p className="text-xs text-muted-foreground">after transport</p>
                     </div>
                   </div>
@@ -195,7 +320,7 @@ export default function MandiPage() {
                     <div className="mt-2 h-2 rounded-full bg-muted overflow-hidden">
                       <div
                         className="h-full bg-primary"
-                        style={{ width: `${Math.min((mandi.arrival / 5000) * 100, 100)}%` }}
+                        style={{ width: `${Math.min((mandi.arrival / 500) * 100, 100)}%` }}
                       />
                     </div>
                   </div>

@@ -11,6 +11,7 @@ from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
 
 from app.config import settings
+from app.core.rate_limit import setup_rate_limiting
 from app.api import auth, commodities, mandis, prices, forecasts, routing, webhooks, weather, crops, diseases, voice, voice_agent, community, resource, news
 from app.schemas import ErrorDetail
 
@@ -120,6 +121,9 @@ Include the token in the Authorization header: `Bearer <token>`
     app.include_router(resource.router, prefix="/api/v1")
     app.include_router(news.router, prefix="/api/v1", tags=["News"])
     app.include_router(webhooks.router)  # Webhooks at /webhooks (no version prefix for external services)
+    
+    # Configure custom Rate Limiter
+    setup_rate_limiting(app)
     
     # Exception handlers
     @app.exception_handler(RequestValidationError)

@@ -238,89 +238,98 @@ class ForecastService:
         # Load models if not loaded
         await self.load_models()
         
-        # Check if model exists for horizon
-        if horizon_days not in self._forecasters:
-            # Try to find closest available horizon
-            available = list(self._forecasters.keys())
-            if not available:
-                # No model loaded: caller should handle as insufficient forecast data
-                return None
-            horizon_days = min(available, key=lambda x: abs(x - horizon_days))
-        
-        forecaster = self._forecasters[horizon_days]
-        
         # Get historical data
         price_df = await self._get_historical_prices(commodity_id, mandi_id)
         
         if price_df.empty or len(price_df) < 30:
-            # Insufficient historical data to produce a reliable forecast
             return None
         
         # Get commodity and mandi info
         commodity, mandi = await self._get_commodity_mandi_info(commodity_id, mandi_id)
-        
         if not commodity or not mandi:
             return None
-        
-        # Prepare features
-        feature_engineer = FeatureEngineer()
-        df, feature_columns, _ = feature_engineer.prepare_features(
-            df=price_df,
-            horizon_days=horizon_days,
-            is_training=False,
-        )
-        
-        # Get latest data point for prediction
-        latest = df.iloc[-1:][feature_columns]
-        X = latest.values
-        
-        # Handle NaN values
-        X = np.nan_to_num(X, nan=0.0)
-        
-        # Make prediction
-        prediction = forecaster.predict(X[0], return_confidence=True)
-        
-        if isinstance(prediction, (int, float)):
-            predicted_price = float(prediction)
-            confidence_lower = predicted_price * 0.90
-            confidence_upper = predicted_price * 1.10
-            confidence = 0.80
-        else:
-            predicted_price = prediction.predicted_price
-            confidence_lower = prediction.lower_bound
-            confidence_upper = prediction.upper_bound
-            confidence = prediction.confidence
-        
-        # Get current price
+
         current_price = float(price_df.iloc[-1]["modal_price"])
-        
-        # Calculate change
+        use_ml = False
+        avg_daily_change = 0.0
+
+        # --- Try ML model first ---
+        if horizon_days in self._forecasters or len(self._forecasters) > 0:
+            actual_horizon = horizon_days
+            if horizon_days not in self._forecasters:
+                available = list(self._forecasters.keys())
+                actual_horizon = min(available, key=lambda x: abs(x - horizon_days))
+            forecaster = self._forecasters[actual_horizon]
+            try:
+                feature_engineer = FeatureEngineer()
+                df, feature_columns, _ = feature_engineer.prepare_features(
+                    df=price_df, horizon_days=actual_horizon, is_training=False,
+                )
+                latest = df.iloc[-1:][feature_columns]
+                X = latest.values
+                X = np.nan_to_num(X, nan=0.0)
+                prediction = forecaster.predict(X[0], return_confidence=True)
+                if isinstance(prediction, (int, float)):
+                    predicted_price = float(prediction)
+                    confidence_lower = predicted_price * 0.90
+                    confidence_upper = predicted_price * 1.10
+                    confidence = 0.80
+                else:
+                    predicted_price = prediction.predicted_price
+                    confidence_lower = prediction.lower_bound
+                    confidence_upper = prediction.upper_bound
+                    confidence = prediction.confidence
+                use_ml = True
+            except Exception as e:
+                print(f"ML forecast failed, falling back to statistical: {e}")
+
+        # --- Statistical fallback: Weighted Moving Average ---
+        if not use_ml:
+            prices = price_df["modal_price"].astype(float).values
+            window = min(30, len(prices))
+            recent_prices = prices[-window:]
+            weights = np.exp(np.linspace(0, 1, window))
+            weights /= weights.sum()
+            weighted_avg = np.average(recent_prices, weights=weights)
+            if len(prices) >= 14:
+                trend_window = prices[-14:]
+                daily_changes = np.diff(trend_window) / trend_window[:-1]
+                avg_daily_change = float(np.mean(daily_changes))
+            predicted_price = float(weighted_avg * (1 + avg_daily_change * horizon_days))
+            spread = 0.03 + (0.005 * horizon_days)
+            confidence_lower = predicted_price * (1 - spread)
+            confidence_upper = predicted_price * (1 + spread)
+            confidence = max(0.60, 0.95 - (0.01 * horizon_days))
+
         price_change = predicted_price - current_price
         price_change_pct = (price_change / current_price * 100) if current_price > 0 else 0
-        
-        # Determine trend
         if price_change_pct > 2:
             trend = "up"
         elif price_change_pct < -2:
             trend = "down"
         else:
             trend = "stable"
-        
-        # Generate explanation
+
         explanation = None
-        if include_explanation:
+        if include_explanation and use_ml:
             try:
                 explanation = await self._generate_explanation(
-                    forecaster=forecaster,
-                    X=X[0],
-                    feature_columns=feature_columns,
-                    commodity_name=commodity.name,
-                    mandi_name=mandi.name,
-                    horizon_days=horizon_days,
+                    forecaster=forecaster, X=X[0], feature_columns=feature_columns,
+                    commodity_name=commodity.name, mandi_name=mandi.name, horizon_days=horizon_days,
                 )
             except Exception as e:
                 print(f"Failed to generate explanation: {e}")
-        
+        elif include_explanation:
+            explanation = {
+                "method": "Weighted Moving Average",
+                "summary": f"Based on {len(price_df)} days of data, {commodity.name} at {mandi.name} is expected to {'increase' if price_change > 0 else 'decrease'} by {abs(price_change_pct):.1f}% over {horizon_days} days.",
+                "factors": {
+                    "recent_trend": f"{'Upward' if avg_daily_change > 0 else 'Downward'} trend of {abs(avg_daily_change*100):.2f}%/day",
+                    "data_points": len(price_df),
+                    "model_type": "Statistical (WMA)",
+                },
+            }
+
         return ForecastOutput(
             commodity_id=commodity_id,
             commodity_name=commodity.name,

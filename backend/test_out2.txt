@@ -1,0 +1,15 @@
+Testing Weather Request...
+WEATHER RESPONSE:
+The weather is partly cloudy with a maximum temperature of 30.5°C and a minimum temperature of 17.0°C. There is no rain today. It's suitable for spraying.
+--------------------------------------------------
+Testing Hindi Price Request...
+HINDI PRICE RESPONSE:
+मंडी मूल्य जानने के लिए मैं ताज़ा जानकारी देख रहा हूँ। गाजर का मंडी मूल्य 500 से 700 रुपये प्रति क्विंटल है।
+--------------------------------------------------
+Testing Web Search Request...
+SEARCH RESPONSE:
+Let me check the latest news on the web. According to recent updates, the 18th installment of PM Kisan Yojana is expected to be released soon, but the exact date has not been officially announced yet. I will check for more updates.
+--------------------------------------------------
+Testing General Request...
+GENERAL RESPONSE:
+For wheat, use a balanced fertilizer like NPK 20:20:20. Apply 50 kg per acre after sowing, and another 50 kg 30 days later. You can also add urea for extra nitrogen. Check the soil type and crop stage to adjust the amount. Let me check the mandi prices for you to get the best fertilizer deal.

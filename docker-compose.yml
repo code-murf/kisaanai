@@ -202,3 +202,20 @@ volumes:
     name: agri-redis-data
   prefect_data:
     name: agri-prefect-data
+
+  # ============================================
+  # Next.js Frontend
+  # ============================================
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: agri-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    networks:
+      - agri-network
+    profiles:
+      - production
+
