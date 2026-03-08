@@ -36,7 +36,7 @@ export default function RootLayout({
         <Providers>
           <ServiceWorkerRegister />
           <BackgroundMusic />
-          <main className="min-h-screen pb-16 md:pb-0">
+          <main className="min-h-screen pb-[calc(6.5rem+env(safe-area-inset-bottom))] md:pb-0">
             {children}
           </main>
           <BottomNav />
