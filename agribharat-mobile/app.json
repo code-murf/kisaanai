@@ -43,7 +43,7 @@
       ]
     ],
     "extra": {
-      "API_URL": "http://192.168.29.111:8000/api/v1",
+      "API_URL": "https://kisaanai.duckdns.org/api/v1",
       "GROQ_API_KEY": "set_via_env",
       "SARVAM_API_KEY": "set_via_env",
       "ELEVENLABS_API_KEY": "set_via_env"

@@ -18,11 +18,23 @@ interface ApiMandi {
   longitude: number
 }
 
+function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371
+  const dLat = (lat2 - lat1) * Math.PI / 180
+  const dLon = (lon2 - lon1) * Math.PI / 180
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2)
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+  return Math.round(R * c)
+}
+
 // Component to handle map centering
 function MapUpdater({ center }: { center: [number, number] }) {
   const map = useMap()
   useEffect(() => {
-    map.flyTo(center, 13)
+    map.flyTo(center, 8)
   }, [center, map])
   return null
 }
@@ -116,10 +128,10 @@ export default function MandiMap() {
         </Button>
       </CardHeader>
       <CardContent className="p-0">
-        <div className="h-[600px] w-full relative z-0">
+        <div className="h-[350px] md:h-[500px] w-full relative z-0">
           <MapContainer
             center={center}
-            zoom={11}
+            zoom={8}
             scrollWheelZoom={false}
             style={{ height: "100%", width: "100%" }}
           >
@@ -130,7 +142,7 @@ export default function MandiMap() {
 
             <MapUpdater center={center} />
 
-            {/* User Location */}
+            {/* User Location with 200km radius */}
             {location && (
                 <>
                     <Marker position={[location.lat, location.lon]} icon={icons.user}>
@@ -140,27 +152,36 @@ export default function MandiMap() {
                     </Marker>
                     <Circle
                         center={[location.lat, location.lon]}
-                        pathOptions={{ fillColor: '#3b82f6', fillOpacity: 0.1, color: '#3b82f6' }}
-                        radius={2000}
+                        pathOptions={{ fillColor: '#3b82f6', fillOpacity: 0.08, color: '#3b82f6', weight: 1.5, dashArray: '8 4' }}
+                        radius={200000}
                     />
                 </>
             )}
 
-            {/* API Mandis */}
-            {apiMandis.map((mandi) => (
-              <Marker key={mandi.id} position={[mandi.latitude, mandi.longitude]} icon={icons.mandi}>
-                <Popup className="mandi-popup">
-                  <div className="w-[200px] flex flex-col gap-2">
-                    <div>
-                        <h3 className="font-bold text-lg leading-none">{mandi.name}</h3>
-                        <p className="text-xs text-muted-foreground mt-1">
-                            {mandi.district}, {mandi.state}
-                        </p>
+            {/* API Mandis — nearby within 200km shown with distance */}
+            {apiMandis.map((mandi) => {
+              const dist = location ? calculateDistance(location.lat, location.lon, mandi.latitude, mandi.longitude) : 0
+              const isNearby = !location || dist <= 200
+              return (
+                <Marker key={mandi.id} position={[mandi.latitude, mandi.longitude]} icon={icons.mandi}>
+                  <Popup className="mandi-popup">
+                    <div className="w-[200px] flex flex-col gap-2">
+                      <div>
+                          <h3 className="font-bold text-lg leading-none">{mandi.name}</h3>
+                          <p className="text-xs text-gray-500 mt-1">
+                              {mandi.district}, {mandi.state}
+                          </p>
+                          {location && (
+                            <p className={`text-sm font-semibold mt-1 ${isNearby ? 'text-green-600' : 'text-orange-600'}`}>
+                              {dist} km {isNearby ? '(Nearby)' : '(Far)'}
+                            </p>
+                          )}
+                      </div>
                     </div>
-                  </div>
-                </Popup>
-              </Marker>
-            ))}
+                  </Popup>
+                </Marker>
+              )
+            })}
           </MapContainer>
         </div>
       </CardContent>

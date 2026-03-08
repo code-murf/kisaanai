@@ -4,12 +4,13 @@ import {
   TextInput, ActivityIndicator, RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { MapPin, Search, ChevronRight } from 'lucide-react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { MapPin, Search, ChevronRight, TrendingUp, TrendingDown } from 'lucide-react-native';
 import { COLORS } from '../constants';
 import { useAppStore } from '../store/useAppStore';
 import { api } from '../services/api';
 
-const C = { bg: '#000', card: '#111', border: '#1c1c1e', muted: '#8e8e93', green: '#34c759', white: '#fff' };
+const C = { bg: '#0a0a0a', card: '#171717', border: '#262626', muted: '#a3a3a3', green: '#34d399', white: '#fff' };
 
 export default function MandiScreen() {
   const { selectedLanguage } = useAppStore();
@@ -21,18 +22,24 @@ export default function MandiScreen() {
   const [states, setStates] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState('');
 
   const load = async (refresh = false) => {
     if (refresh) setRefreshing(true); else setLoading(true);
+    setError('');
     try {
-      const [m, st, p] = await Promise.all([
+      const [m, st, p] = await Promise.allSettled([
         api.getMandis({ page_size: 50 }), api.getMandiStates(), api.getPrices({ commodity_id: 1, page_size: 200 }),
       ]);
-      setMandis(m); setStates(st);
-      const pm = new Map<number, any>();
-      for (const pr of p) pm.set(pr.mandi_id, pr);
-      setPrices(pm);
-    } catch {} finally { setLoading(false); setRefreshing(false); }
+      if (m.status === 'fulfilled') setMandis(m.value);
+      if (st.status === 'fulfilled') setStates(st.value);
+      if (p.status === 'fulfilled') {
+        const pm = new Map<number, any>();
+        for (const pr of p.value) pm.set(pr.mandi_id, pr);
+        setPrices(pm);
+      }
+      if (m.status === 'rejected' && st.status === 'rejected') setError(hi ? 'सर्वर से कनेक्ट नहीं हो पाया' : 'Could not connect to server');
+    } catch { setError(hi ? 'नेटवर्क त्रुटि' : 'Network error'); } finally { setLoading(false); setRefreshing(false); }
   };
 
   useEffect(() => { load(); }, []);
@@ -47,8 +54,13 @@ export default function MandiScreen() {
     <SafeAreaView style={s.container} edges={['top']}>
       {/* Header */}
       <View style={s.header}>
-        <Text style={s.headerTitle}>{hi ? 'मंडी' : 'Mandis'}</Text>
-        <Text style={s.headerCount}>{filtered.length} {hi ? 'मिलीं' : 'found'}</Text>
+        <View>
+          <Text style={s.headerTitle}>{hi ? '📍 मंडी' : '📍 Mandis'}</Text>
+          <Text style={s.headerSub}>{hi ? 'लाइव भाव देखें' : 'Live market prices'}</Text>
+        </View>
+        <View style={s.countBadge}>
+          <Text style={s.countText}>{filtered.length}</Text>
+        </View>
       </View>
 
       {/* Search */}
@@ -80,6 +92,8 @@ export default function MandiScreen() {
             const p = prices.get(m.id);
             return (
               <View key={m.id} style={s.card}>
+                <LinearGradient colors={['rgba(16,185,129,0.06)', 'rgba(0,0,0,0)']} style={StyleSheet.absoluteFill} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} />
+                <View style={s.cardAccent} />
                 <View style={s.cardTop}>
                   <View style={s.iconBox}><MapPin size={16} color={C.green} /></View>
                   <View style={{ flex: 1 }}>
@@ -92,7 +106,11 @@ export default function MandiScreen() {
                   <View style={s.cardBottom}>
                     <View>
                       <Text style={s.priceLabel}>{hi ? 'भाव' : 'Price'}</Text>
-                      <Text style={s.priceVal}>₹{p.modal_price || '--'}</Text>
+                      <Text style={s.priceVal}>₹{p.modal_price?.toLocaleString() || '--'}</Text>
+                    </View>
+                    <View>
+                      <Text style={s.priceLabel}>{hi ? 'न्यूनतम' : 'Min'}</Text>
+                      <Text style={[s.priceVal, { color: '#f59e0b' }]}>₹{p.min_price || '--'}</Text>
                     </View>
                     <View>
                       <Text style={s.priceLabel}>{hi ? 'आवक' : 'Arrival'}</Text>
@@ -112,28 +130,31 @@ export default function MandiScreen() {
 
 const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: C.bg },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', paddingHorizontal: 20, paddingTop: 16, paddingBottom: 8 },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingTop: 16, paddingBottom: 8 },
   headerTitle: { fontSize: 26, fontWeight: '700', color: C.white },
-  headerCount: { fontSize: 14, color: C.muted },
+  headerSub: { fontSize: 12, color: C.muted, marginTop: 2 },
+  countBadge: { backgroundColor: 'rgba(16,185,129,0.15)', paddingHorizontal: 14, paddingVertical: 6, borderRadius: 20 },
+  countText: { fontSize: 14, fontWeight: '700', color: '#34d399' },
 
-  searchBox: { flexDirection: 'row', alignItems: 'center', marginHorizontal: 20, marginBottom: 12, backgroundColor: C.card, borderRadius: 10, paddingHorizontal: 14, gap: 10, borderWidth: 0.5, borderColor: C.border },
+  searchBox: { flexDirection: 'row', alignItems: 'center', marginHorizontal: 20, marginBottom: 12, backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: 12, paddingHorizontal: 14, gap: 10, borderWidth: 0.5, borderColor: 'rgba(255,255,255,0.08)' },
   searchInput: { flex: 1, color: C.white, fontSize: 15, paddingVertical: 12 },
 
   filterRow: { maxHeight: 40, marginBottom: 12 },
-  chip: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, backgroundColor: C.card, marginRight: 6, borderWidth: 0.5, borderColor: C.border },
-  chipActive: { backgroundColor: C.green },
+  chip: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.06)', marginRight: 6, borderWidth: 0.5, borderColor: 'rgba(255,255,255,0.08)' },
+  chipActive: { backgroundColor: '#059669', borderColor: '#059669' },
   chipText: { color: C.muted, fontSize: 13, fontWeight: '500' },
-  chipTextActive: { color: C.bg, fontWeight: '600' },
+  chipTextActive: { color: '#fff', fontWeight: '600' },
 
   list: { flex: 1, paddingHorizontal: 20 },
   empty: { color: C.muted, textAlign: 'center', marginTop: 40, fontSize: 14 },
 
-  card: { backgroundColor: C.card, borderRadius: 12, padding: 16, marginBottom: 8, borderWidth: 0.5, borderColor: C.border },
+  card: { borderRadius: 14, padding: 16, marginBottom: 10, borderWidth: 0.5, borderColor: 'rgba(255,255,255,0.06)', overflow: 'hidden' },
+  cardAccent: { position: 'absolute', left: 0, top: 8, bottom: 8, width: 3, backgroundColor: '#10b981', borderRadius: 2 },
   cardTop: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  iconBox: { width: 36, height: 36, borderRadius: 10, backgroundColor: 'rgba(52,199,89,0.12)', alignItems: 'center', justifyContent: 'center' },
+  iconBox: { width: 36, height: 36, borderRadius: 10, backgroundColor: 'rgba(16,185,129,0.12)', alignItems: 'center', justifyContent: 'center' },
   cardName: { fontSize: 15, fontWeight: '600', color: C.white },
   cardLoc: { fontSize: 13, color: C.muted, marginTop: 1 },
-  cardBottom: { flexDirection: 'row', gap: 32, marginTop: 12, paddingTop: 12, borderTopWidth: 0.5, borderTopColor: C.border },
-  priceLabel: { fontSize: 12, color: C.muted, marginBottom: 2 },
-  priceVal: { fontSize: 16, fontWeight: '700', color: C.white },
+  cardBottom: { flexDirection: 'row', gap: 32, marginTop: 12, paddingTop: 12, borderTopWidth: 0.5, borderTopColor: 'rgba(255,255,255,0.06)' },
+  priceLabel: { fontSize: 11, color: C.muted, marginBottom: 2, textTransform: 'uppercase', letterSpacing: 0.3 },
+  priceVal: { fontSize: 16, fontWeight: '700', color: '#34d399' },
 });

@@ -1,7 +1,7 @@
 ﻿import { Audio } from 'expo-av';
 import axios from 'axios';
 import { Platform } from 'react-native';
-import * as FileSystem from 'expo-file-system';
+import * as FileSystem from 'expo-file-system/legacy';
 
 // API Keys
 const SARVAM_API_KEY = process.env.EXPO_PUBLIC_SARVAM_API_KEY ?? '';

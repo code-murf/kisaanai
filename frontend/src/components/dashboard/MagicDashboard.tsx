@@ -167,7 +167,7 @@ export function MagicDashboard() {
       href: "/mandi",
       cta: t("dashboard.viewMap"),
       background: <div className="row-span-1 rounded-xl border-none bg-gradient-to-br from-emerald-100 to-emerald-50 dark:from-emerald-900/20 dark:to-emerald-900/10 shadow-sm" />,
-      className: "col-span-3 md:col-span-1 lg:col-span-1 border-emerald-100 bg-emerald-50/30 dark:bg-emerald-950/20 dark:border-emerald-900/50",
+      className: "md:col-span-1 lg:col-span-1 border-emerald-100 bg-emerald-50/30 dark:bg-emerald-950/20 dark:border-emerald-900/50",
       iconClassName: "text-emerald-700 dark:text-emerald-400",
     },
     {
@@ -177,7 +177,7 @@ export function MagicDashboard() {
       href: "/charts",
       cta: t("dashboard.seeTrends"),
       background: <div className="col-span-3 row-span-1 rounded-xl border-none bg-gradient-to-br from-indigo-100 to-indigo-50 dark:from-indigo-900/20 dark:to-indigo-900/10 shadow-sm" />,
-      className: "col-span-3 md:col-span-2 lg:col-span-1 border-indigo-100 bg-indigo-50/30 dark:bg-indigo-950/20 dark:border-indigo-900/50",
+      className: "md:col-span-2 lg:col-span-1 border-indigo-100 bg-indigo-50/30 dark:bg-indigo-950/20 dark:border-indigo-900/50",
       iconClassName: "text-indigo-700 dark:text-indigo-400",
     },
     {
@@ -187,7 +187,7 @@ export function MagicDashboard() {
       href: "/voice",
       cta: t("dashboard.speakNow"),
       background: <div className="col-span-2 row-span-1 rounded-xl border-none bg-gradient-to-br from-blue-100 to-blue-50 dark:from-blue-900/20 dark:to-blue-900/10 shadow-sm" />,
-      className: "col-span-3 md:col-span-2 lg:col-span-1 border-rose-100 bg-rose-50/30 dark:bg-rose-950/20 dark:border-rose-900/50",
+      className: "md:col-span-2 lg:col-span-1 border-rose-100 bg-rose-50/30 dark:bg-rose-950/20 dark:border-rose-900/50",
       iconClassName: "text-rose-700 dark:text-rose-400",
     },
     {
@@ -197,7 +197,7 @@ export function MagicDashboard() {
       href: "/doctor",
       cta: t("dashboard.diagnose"),
       background: <div className="col-span-1 row-span-1 rounded-xl border-none bg-gradient-to-br from-amber-100 to-amber-50 dark:from-amber-900/20 dark:to-amber-900/10 shadow-sm" />,
-      className: "col-span-3 md:col-span-1 lg:col-span-2 border-amber-100 bg-amber-50/30 dark:bg-amber-950/20 dark:border-amber-900/50",
+      className: "md:col-span-1 lg:col-span-2 border-amber-100 bg-amber-50/30 dark:bg-amber-950/20 dark:border-amber-900/50",
       iconClassName: "text-amber-700 dark:text-amber-400",
     },
     {
@@ -207,7 +207,7 @@ export function MagicDashboard() {
       href: "/news",
       cta: t("dashboard.readMore"),
       background: <div className="absolute inset-0 bg-gradient-to-br from-sky-100/50 via-sky-50/30 to-transparent opacity-100" />,
-      className: "col-span-3 md:col-span-1 lg:col-span-1 border-sky-100 bg-sky-50/30 dark:bg-sky-950/20 dark:border-sky-900/50",
+      className: "md:col-span-1 lg:col-span-1 border-sky-100 bg-sky-50/30 dark:bg-sky-950/20 dark:border-sky-900/50",
       iconClassName: "text-sky-700 dark:text-sky-400",
     },
     {
@@ -217,7 +217,7 @@ export function MagicDashboard() {
       href: "/community",
       cta: "Join Discussion",
       background: <div className="absolute inset-0 bg-gradient-to-br from-purple-100/50 via-purple-50/30 to-transparent opacity-100" />,
-      className: "col-span-3 md:col-span-2 lg:col-span-2 border-purple-100 bg-purple-50/30 dark:bg-purple-950/20 dark:border-purple-900/50",
+      className: "md:col-span-2 lg:col-span-2 border-purple-100 bg-purple-50/30 dark:bg-purple-950/20 dark:border-purple-900/50",
       iconClassName: "text-purple-700 dark:text-purple-400",
     },
   ];

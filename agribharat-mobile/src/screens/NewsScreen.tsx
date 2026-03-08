@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
-  Image, ActivityIndicator, RefreshControl, Dimensions, Linking, SafeAreaView
+  Image, ActivityIndicator, RefreshControl, Dimensions, Linking
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
 import { ChevronRight, ExternalLink, Newspaper, TrendingUp, AlertCircle, CloudRain, ShieldAlert } from 'lucide-react-native';
 import { useAppStore } from '../store/useAppStore';
 import { api } from '../services/api';
@@ -23,8 +25,8 @@ export default function NewsScreen({ navigation }: any) {
     if (isRefresh) setRefreshing(true); else setLoading(true);
     setError('');
     try {
-      const data = await api.getAxios().get('/news');
-      setNews(data.data || []);
+      const data = await api.getNews();
+      setNews(data || []);
     } catch (e: any) {
       setError(hi ? 'समाचार लोड करने में विफल' : 'Failed to load news');
     } finally {
@@ -45,7 +47,7 @@ export default function NewsScreen({ navigation }: any) {
   };
 
   return (
-    <SafeAreaView style={st.container}>
+    <SafeAreaView style={st.container} edges={['top']}>
       <View style={st.header}>
         <Text style={st.brand}>{hi ? 'KisaanAI समाचार' : 'Agri News'}</Text>
         <Text style={st.tagline}>
@@ -105,7 +107,7 @@ export default function NewsScreen({ navigation }: any) {
 }
 
 const st = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#000' },
+  container: { flex: 1, backgroundColor: '#0a0a0a' },
   header: { paddingHorizontal: 20, paddingTop: 12, paddingBottom: 16 },
   brand: { fontSize: 28, fontWeight: '800', color: '#fff', letterSpacing: -0.5 },
   tagline: { fontSize: 13, color: '#8e8e93', marginTop: 4 },

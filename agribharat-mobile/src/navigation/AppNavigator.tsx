@@ -2,8 +2,8 @@ import React from 'react';
 import { View, StyleSheet, Platform } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { NavigationContainer } from '@react-navigation/native';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { Home, MapPin, Mic, BarChart3, Settings } from 'lucide-react-native';
+import { createStackNavigator } from '@react-navigation/stack';
+import { Home, MapPin, Mic, BarChart, Settings } from 'lucide-react-native';
 
 import HomeScreen from '../screens/HomeScreen';
 import MandiScreen from '../screens/MandiScreen';
@@ -16,9 +16,9 @@ import NewsScreen from '../screens/NewsScreen';
 import CommunityScreen from '../screens/CommunityScreen';
 
 const Tab = createBottomTabNavigator();
-const Stack = createNativeStackNavigator();
+const Stack = createStackNavigator();
 
-const C = { bg: '#000', card: '#000', border: '#1c1c1e', muted: '#8e8e93', green: '#34c759' };
+const C = { bg: '#0a0a0a', card: '#0a0a0a', border: '#262626', muted: '#a3a3a3', green: '#34d399' };
 
 function TabIcon({ name, focused, color }: { name: string; focused: boolean; color: string }) {
   const size = 22;
@@ -31,8 +31,8 @@ function TabIcon({ name, focused, color }: { name: string; focused: boolean; col
         <Mic size={20} color="#000" strokeWidth={2.5} />
       </View>
     );
-    case 'Charts': return <BarChart3 size={size} color={color} strokeWidth={w} />;
-    case 'News': return <Settings size={size} color={color} strokeWidth={w} />; // using settings icon for now or standard one
+    case 'Charts': return <BarChart size={size} color={color} strokeWidth={w} />;
+    case 'Settings': return <Settings size={size} color={color} strokeWidth={w} />;
     default: return null;
   }
 }
@@ -61,7 +61,7 @@ function TabNavigator() {
       <Tab.Screen name="Mandi" component={MandiScreen} />
       <Tab.Screen name="Voice" component={VoiceScreen} options={{ tabBarLabel: '' }} />
       <Tab.Screen name="Charts" component={ChartsScreen} />
-      <Tab.Screen name="News" component={NewsScreen} />
+      <Tab.Screen name="Settings" component={SettingsScreen} />
     </Tab.Navigator>
   );
 }
@@ -72,8 +72,8 @@ export default function AppNavigator() {
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         <Stack.Screen name="MainTabs" component={TabNavigator} />
         <Stack.Screen name="Doctor" component={DoctorScreen} />
+        <Stack.Screen name="News" component={NewsScreen} />
         <Stack.Screen name="Community" component={CommunityScreen} />
-        <Stack.Screen name="Settings" component={SettingsScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

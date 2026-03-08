@@ -70,7 +70,7 @@ export default function MandiPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState("")
-  const [sortBy, setSortBy] = useState<"price" | "distance" | "arrival">("price")
+  const [sortBy, setSortBy] = useState<"price" | "distance" | "arrival" | "nearby">("nearby")
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null)
   const { t } = useTranslation()
 
@@ -165,14 +165,16 @@ export default function MandiPage() {
   }, [userLocation])
 
   const filteredAndSortedMandis = mandis
-    .filter((mandi) =>
-      mandi.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      mandi.district.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      mandi.state.toLowerCase().includes(searchTerm.toLowerCase())
-    )
+    .filter((mandi) => {
+      const matchesSearch = mandi.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        mandi.district.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        mandi.state.toLowerCase().includes(searchTerm.toLowerCase())
+      if (sortBy === "nearby") return matchesSearch && mandi.distance <= 200
+      return matchesSearch
+    })
     .sort((a, b) => {
       if (sortBy === "price") return b.price - a.price
-      if (sortBy === "distance") return a.distance - b.distance
+      if (sortBy === "distance" || sortBy === "nearby") return a.distance - b.distance
       return b.arrival - a.arrival
     })
 
@@ -237,6 +239,14 @@ export default function MandiPage() {
 
         {/* Sort Buttons */}
         <div className="flex gap-2 overflow-x-auto pb-2">
+          <Button
+            variant={sortBy === "nearby" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setSortBy("nearby")}
+          >
+            <MapPin className="mr-2 h-4 w-4" />
+            Nearby (&lt;200km)
+          </Button>
           <Button
             variant={sortBy === "price" ? "default" : "outline"}
             size="sm"

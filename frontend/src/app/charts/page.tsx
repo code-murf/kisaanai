@@ -66,7 +66,7 @@ function formatCurrency(value: number): string {
 }
 
 export default function ChartsPage() {
-  const [timeRange, setTimeRange] = useState("7d")
+  const [timeRange, setTimeRange] = useState("90d")
   const [chartType, setChartType] = useState<"price" | "forecast" | "comparison">("price")
   const [trendData, setTrendData] = useState<TrendPoint[]>([])
   const [forecastData, setForecastData] = useState<ForecastPoint[]>([])
@@ -77,7 +77,7 @@ export default function ChartsPage() {
   const [error, setError] = useState<string | null>(null)
   const [commodities, setCommodities] = useState<Commodity[]>([])
   const [selectedCommodityId, setSelectedCommodityId] = useState<number>(
-    Number(process.env.NEXT_PUBLIC_DEFAULT_COMMODITY_ID || "2")
+    Number(process.env.NEXT_PUBLIC_DEFAULT_COMMODITY_ID || "1")
   )
   const { t } = useTranslation()
 

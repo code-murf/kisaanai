@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
-  ActivityIndicator, RefreshControl, Dimensions, Alert, SafeAreaView
+  ActivityIndicator, RefreshControl, Dimensions, Alert
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Audio } from 'expo-av';
 import { Users, Mic, Square, Play, Pause, Send, Heart, MapPin, ChevronLeft } from 'lucide-react-native';
 import { useAppStore } from '../store/useAppStore';
@@ -29,8 +30,8 @@ export default function CommunityScreen({ navigation }: any) {
   const load = useCallback(async (isRefresh = false) => {
     if (isRefresh) setRefreshing(true); else setLoading(true);
     try {
-      const data = await api.getAxios().get('/community/notes');
-      setNotes(data.data || []);
+      const data = await api.getCommunityNotes();
+      setNotes(data || []);
     } catch (e) {
       console.warn("Error loading community notes", e);
     } finally {
@@ -86,9 +87,7 @@ export default function CommunityScreen({ navigation }: any) {
       formData.append('location_lng', '75.8577');
       formData.append('tags', JSON.stringify(['Mobile App']));
 
-      await api.getAxios().post('/community/notes', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
+      await api.postCommunityNote(formData);
 
       setAudioUri(null);
       await load(true);
@@ -110,7 +109,7 @@ export default function CommunityScreen({ navigation }: any) {
     try {
       if (soundRef.current) await soundRef.current.unloadAsync();
       const { sound } = await Audio.Sound.createAsync(
-        isPreview ? { uri: url } : { uri: `http://192.168.29.111:8000${url}` } // Adjust for actual local/prod URL
+        isPreview ? { uri: url } : { uri: `https://kisaanai-backend.onrender.com${url}` }
       );
       soundRef.current = sound;
       
@@ -249,7 +248,7 @@ export default function CommunityScreen({ navigation }: any) {
 }
 
 const st = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#000' },
+  container: { flex: 1, backgroundColor: '#0a0a0a' },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 0.5, borderBottomColor: '#1c1c1e' },
   backBtn: { padding: 8, marginLeft: -8, width: 40 },
   headerTextContainer: { alignItems: 'center' },

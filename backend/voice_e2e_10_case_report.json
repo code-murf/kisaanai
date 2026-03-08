@@ -1,15 +1,67 @@
 {
   "stt_smoke": {
-    "ok": true,
-    "file": "C:\\Users\\Asus\\Desktop\\Aiforbharat\\backend\\test_audio.wav",
-    "latency_ms": 1009.15,
-    "transcript_preview": " झाल झाल",
+    "ok": false,
+    "error": "No candidate audio file produced transcript",
     "attempts": [
       {
         "file": "C:\\Users\\Asus\\Desktop\\Aiforbharat\\backend\\test_audio.wav",
-        "ok": true,
-        "latency_ms": 1009.15,
-        "transcript_preview": " झाल झाल"
+        "ok": false,
+        "latency_ms": 128.51,
+        "transcript_preview": ""
+      },
+      {
+        "file": "C:\\Users\\Asus\\Desktop\\Aiforbharat\\backend\\static\\audio\\00b4ed85-66cd-4b2d-9a44-52aa1435818b.mp3",
+        "ok": false,
+        "latency_ms": 4.29,
+        "transcript_preview": ""
+      },
+      {
+        "file": "C:\\Users\\Asus\\Desktop\\Aiforbharat\\backend\\static\\audio\\0196bf41-409a-479f-b207-3708eaca2dd6.mp3",
+        "ok": false,
+        "latency_ms": 4.6,
+        "transcript_preview": ""
+      },
+      {
+        "file": "C:\\Users\\Asus\\Desktop\\Aiforbharat\\backend\\static\\audio\\029c043f-f258-44c2-8c0b-4b084b4b62c4.mp3",
+        "ok": false,
+        "latency_ms": 4.02,
+        "transcript_preview": ""
+      },
+      {
+        "file": "C:\\Users\\Asus\\Desktop\\Aiforbharat\\backend\\static\\audio\\035b3f42-b789-4a78-b652-4d77d191f86a.mp3",
+        "ok": false,
+        "latency_ms": 3.31,
+        "transcript_preview": ""
+      },
+      {
+        "file": "C:\\Users\\Asus\\Desktop\\Aiforbharat\\backend\\static\\audio\\0dc81b85-d530-4799-a2e8-61b7d8420a35.mp3",
+        "ok": false,
+        "latency_ms": 4.5,
+        "transcript_preview": ""
+      },
+      {
+        "file": "C:\\Users\\Asus\\Desktop\\Aiforbharat\\static\\audio\\4f2b9789-1482-4490-afac-d1111148effb.mp3",
+        "ok": false,
+        "latency_ms": 3.93,
+        "transcript_preview": ""
+      },
+      {
+        "file": "C:\\Users\\Asus\\Desktop\\Aiforbharat\\static\\audio\\64ae696b-0c61-407a-ad64-1ef9d51c3f94.mp3",
+        "ok": false,
+        "latency_ms": 3.62,
+        "transcript_preview": ""
+      },
+      {
+        "file": "C:\\Users\\Asus\\Desktop\\Aiforbharat\\static\\audio\\70147880-3f10-4a4f-94e4-f6b6e6254a4a.mp3",
+        "ok": false,
+        "latency_ms": 4.87,
+        "transcript_preview": ""
+      },
+      {
+        "file": "C:\\Users\\Asus\\Desktop\\Aiforbharat\\static\\audio\\a53e12a2-db36-4c8b-b293-f30592a81c16.mp3",
+        "ok": false,
+        "latency_ms": 3.82,
+        "transcript_preview": ""
       }
     ]
   },
@@ -19,205 +71,146 @@
       "type": "platform",
       "query": "What can this AgriBharat platform do for farmers? Mention mandi prices, weather, disease help, and voice support.",
       "response_ok": true,
-      "keyword_ok": true,
+      "keyword_ok": false,
       "tts_ok": false,
-      "hit_count": 6,
+      "hit_count": 0,
       "min_hits": 3,
-      "hit_terms": [
-        "mandi",
-        "price",
-        "weather",
-        "disease",
-        "voice",
-        "farm"
-      ],
-      "llm_latency_ms": 671.67,
-      "tts_latency_ms": 575.97,
-      "response_preview": "AgriBharat helps farmers in many ways. You can ask voice questions and get answers. For prices, we suggest checking local mandi rates. You can ask about weather and we'll guide you to check forecasts. If you have disease"
+      "hit_terms": [],
+      "llm_latency_ms": 1018.43,
+      "tts_latency_ms": 6720.97,
+      "response_preview": "I encountered an error trying to process your request."
     },
     {
       "id": "P2",
       "type": "platform",
       "query": "I am in Maharashtra. How can I use this platform daily from morning to evening to decide selling and crop care?",
       "response_ok": true,
-      "keyword_ok": true,
+      "keyword_ok": false,
       "tts_ok": false,
-      "hit_count": 5,
+      "hit_count": 0,
       "min_hits": 2,
-      "hit_terms": [
-        "sell",
-        "mandi",
-        "weather",
-        "crop",
-        "advice"
-      ],
-      "llm_latency_ms": 537.17,
-      "tts_latency_ms": 481.56,
-      "response_preview": "To use this platform daily, start by asking a voice question in the morning about weather or market prices. Your question will be transcribed, and I'll provide an AI response. You'll then hear the answer through audio pl"
+      "hit_terms": [],
+      "llm_latency_ms": 1.97,
+      "tts_latency_ms": 9902.79,
+      "response_preview": "I encountered an error trying to process your request."
     },
     {
       "id": "P3",
       "type": "platform",
       "query": "Is app se mandi bhaav, mausam aur fasal bimari kaise check kar sakte hain? Kadam batao.",
       "response_ok": true,
-      "keyword_ok": true,
+      "keyword_ok": false,
       "tts_ok": false,
-      "hit_count": 4,
+      "hit_count": 0,
       "min_hits": 2,
-      "hit_terms": [
-        "mandi",
-        "mausam",
-        "bimari",
-        "fasal"
-      ],
-      "llm_latency_ms": 768.46,
-      "tts_latency_ms": 462.85,
-      "response_preview": "Aapko app mein voice question puchhna hai, jiska uttar AI dwara diya jayega. Aap mandi bhaav ke liye local mandi rates check kar sakte hain, mausam ke liye weather forecast dekh sakte hain, aur fasal bimari ke liye initi"
+      "hit_terms": [],
+      "llm_latency_ms": 6.48,
+      "tts_latency_ms": 6942.33,
+      "response_preview": "I encountered an error trying to process your request."
     },
     {
       "id": "P4",
       "type": "platform",
       "query": "Give me a short workflow to ask voice questions and get audio replies in Hindi for farmers.",
       "response_ok": true,
-      "keyword_ok": true,
+      "keyword_ok": false,
       "tts_ok": false,
-      "hit_count": 5,
+      "hit_count": 0,
       "min_hits": 2,
-      "hit_terms": [
-        "voice",
-        "audio",
-        "hindi",
-        "question",
-        "reply"
-      ],
-      "llm_latency_ms": 327.43,
-      "tts_latency_ms": 491.67,
-      "response_preview": "To ask voice questions and get audio replies, follow these steps: \nSpeak your question, it will be transcribed, then an AI will generate a response, \nwhich will be played back to you as an audio reply in Hindi."
+      "hit_terms": [],
+      "llm_latency_ms": 3.9,
+      "tts_latency_ms": 9609.16,
+      "response_preview": "I encountered an error trying to process your request."
     },
     {
       "id": "A1",
       "type": "agriculture",
       "query": "Explain Kharif vs Rabi crops in India with examples and sowing windows.",
       "response_ok": true,
-      "keyword_ok": true,
+      "keyword_ok": false,
       "tts_ok": false,
-      "hit_count": 6,
+      "hit_count": 0,
       "min_hits": 3,
-      "hit_terms": [
-        "kharif",
-        "rabi",
-        "india",
-        "sowing",
-        "rice",
-        "wheat"
-      ],
-      "llm_latency_ms": 392.27,
-      "tts_latency_ms": 572.44,
-      "response_preview": "In India, Kharif crops are sown during monsoon (June to September), like rice, maize, and soybean. Rabi crops are sown in winter (October to February), like wheat, mustard, and gram. Check local sowing windows for specif"
+      "hit_terms": [],
+      "llm_latency_ms": 5.26,
+      "tts_latency_ms": 3259.88,
+      "response_preview": "I encountered an error trying to process your request."
     },
     {
       "id": "A2",
       "type": "agriculture",
       "query": "Current wheat MSP in India and how should farmers decide mandi sale timing?",
       "response_ok": true,
-      "keyword_ok": true,
+      "keyword_ok": false,
       "tts_ok": false,
-      "hit_count": 6,
+      "hit_count": 0,
       "min_hits": 3,
-      "hit_terms": [
-        "wheat",
-        "msp",
-        "india",
-        "mandi",
-        "sale",
-        "price"
-      ],
-      "llm_latency_ms": 427.64,
-      "tts_latency_ms": 492.17,
-      "response_preview": "The current wheat MSP in India is set by the government, but it's best to check local mandi rates for the most accurate information. For mandi sale timing, consider the market demand and prices. Generally, it's good to s"
+      "hit_terms": [],
+      "llm_latency_ms": 4.01,
+      "tts_latency_ms": 6645.13,
+      "response_preview": "I encountered an error trying to process your request."
     },
     {
       "id": "A3",
       "type": "agriculture",
       "query": "Punjab mein gehu mein yellow rust ke lakshan aur turant upay batao.",
       "response_ok": true,
-      "keyword_ok": true,
+      "keyword_ok": false,
       "tts_ok": false,
-      "hit_count": 4,
+      "hit_count": 0,
       "min_hits": 2,
-      "hit_terms": [
-        "yellow rust",
-        "gehu",
-        "lakshan",
-        "fungicide"
-      ],
-      "llm_latency_ms": 673.8,
-      "tts_latency_ms": 479.97,
-      "response_preview": "Punjab mein gehu mein yellow rust ki samasya hoti hai. Iske lakshan hain: pattiyo par peele rang ke chitte dhabbe, pattey ka rang badalna, aur bohot kam upaj. Turant upay ke liye, kisan ko fungicide kaprayog karna chahiy"
+      "hit_terms": [],
+      "llm_latency_ms": 2.08,
+      "tts_latency_ms": 7442.24,
+      "response_preview": "I encountered an error trying to process your request."
     },
     {
       "id": "A4",
       "type": "agriculture",
       "query": "My cotton crop in Maharashtra has pink bollworm risk. Give integrated pest management steps.",
       "response_ok": true,
-      "keyword_ok": true,
+      "keyword_ok": false,
       "tts_ok": false,
-      "hit_count": 3,
+      "hit_count": 0,
       "min_hits": 2,
-      "hit_terms": [
-        "pink bollworm",
-        "trap",
-        "monitor"
-      ],
-      "llm_latency_ms": 578.89,
-      "tts_latency_ms": 472.39,
-      "response_preview": "For pink bollworm, use a combination of methods. Plant resistant varieties, maintain field hygiene, and use pheromone traps. Also, apply insecticides and biological control methods like introducing natural predators. Kee"
+      "hit_terms": [],
+      "llm_latency_ms": 2.26,
+      "tts_latency_ms": 6128.0,
+      "response_preview": "I encountered an error trying to process your request."
     },
     {
       "id": "A5",
       "type": "agriculture",
       "query": "For paddy in eastern India, suggest irrigation and fertilizer schedule for tillering to panicle stage.",
       "response_ok": true,
-      "keyword_ok": true,
+      "keyword_ok": false,
       "tts_ok": false,
-      "hit_count": 6,
+      "hit_count": 0,
       "min_hits": 2,
-      "hit_terms": [
-        "paddy",
-        "irrigation",
-        "fertilizer",
-        "tillering",
-        "panicle",
-        "nitrogen"
-      ],
-      "llm_latency_ms": 363.07,
-      "tts_latency_ms": 665.83,
-      "response_preview": "For paddy in eastern India, irrigate every 4-5 days during tillering and every 7-10 days during panicle stage. Apply nitrogen-rich fertilizer at tillering, and phosphorus-potassium mix at panicle initiation. Adjust irrig"
+      "hit_terms": [],
+      "llm_latency_ms": 2.38,
+      "tts_latency_ms": 6026.4,
+      "response_preview": "I encountered an error trying to process your request."
     },
     {
       "id": "A6",
       "type": "agriculture",
       "query": "PM-KISAN aur Fasal Bima Yojana ka fayda kya hai, apply kaise karein?",
       "response_ok": true,
-      "keyword_ok": true,
+      "keyword_ok": false,
       "tts_ok": false,
-      "hit_count": 4,
+      "hit_count": 0,
       "min_hits": 2,
-      "hit_terms": [
-        "pm-kisan",
-        "fasal bima",
-        "yojana",
-        "apply"
-      ],
-      "llm_latency_ms": 409.05,
-      "tts_latency_ms": 449.71,
-      "response_preview": "PM-KISAN aur Fasal Bima Yojana se kisanon ko finanical madad milti hai. PM-KISAN ke liye aap online apply kar sakte hain, official website par jayein aur form bharein. Fasal Bima Yojana ke liye bank ya local agriculture "
+      "hit_terms": [],
+      "llm_latency_ms": 24.76,
+      "tts_latency_ms": 11440.8,
+      "response_preview": "I encountered an error trying to process your request."
     }
   ],
   "summary": {
     "total_cases": 10,
     "response_pass": 10,
-    "keyword_pass": 10,
+    "keyword_pass": 0,
     "tts_pass": 0,
     "full_pass": 0
   }

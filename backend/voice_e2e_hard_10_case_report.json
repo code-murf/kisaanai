@@ -1,16 +1,68 @@
 {
   "suite": "hard_10",
   "stt_smoke": {
-    "ok": true,
-    "file": "C:\\Users\\Asus\\Desktop\\Aiforbharat\\backend\\test_audio.wav",
-    "latency_ms": 643.57,
-    "transcript_preview": " झाल झाल",
+    "ok": false,
+    "error": "No candidate audio file produced transcript",
     "attempts": [
       {
         "file": "C:\\Users\\Asus\\Desktop\\Aiforbharat\\backend\\test_audio.wav",
-        "ok": true,
-        "latency_ms": 643.57,
-        "transcript_preview": " झाल झाल"
+        "ok": false,
+        "latency_ms": 128.53,
+        "transcript_preview": ""
+      },
+      {
+        "file": "C:\\Users\\Asus\\Desktop\\Aiforbharat\\backend\\static\\audio\\00b4ed85-66cd-4b2d-9a44-52aa1435818b.mp3",
+        "ok": false,
+        "latency_ms": 4.12,
+        "transcript_preview": ""
+      },
+      {
+        "file": "C:\\Users\\Asus\\Desktop\\Aiforbharat\\backend\\static\\audio\\0196bf41-409a-479f-b207-3708eaca2dd6.mp3",
+        "ok": false,
+        "latency_ms": 4.61,
+        "transcript_preview": ""
+      },
+      {
+        "file": "C:\\Users\\Asus\\Desktop\\Aiforbharat\\backend\\static\\audio\\029c043f-f258-44c2-8c0b-4b084b4b62c4.mp3",
+        "ok": false,
+        "latency_ms": 4.0,
+        "transcript_preview": ""
+      },
+      {
+        "file": "C:\\Users\\Asus\\Desktop\\Aiforbharat\\backend\\static\\audio\\035b3f42-b789-4a78-b652-4d77d191f86a.mp3",
+        "ok": false,
+        "latency_ms": 3.34,
+        "transcript_preview": ""
+      },
+      {
+        "file": "C:\\Users\\Asus\\Desktop\\Aiforbharat\\backend\\static\\audio\\0dc81b85-d530-4799-a2e8-61b7d8420a35.mp3",
+        "ok": false,
+        "latency_ms": 4.48,
+        "transcript_preview": ""
+      },
+      {
+        "file": "C:\\Users\\Asus\\Desktop\\Aiforbharat\\static\\audio\\4f2b9789-1482-4490-afac-d1111148effb.mp3",
+        "ok": false,
+        "latency_ms": 3.96,
+        "transcript_preview": ""
+      },
+      {
+        "file": "C:\\Users\\Asus\\Desktop\\Aiforbharat\\static\\audio\\64ae696b-0c61-407a-ad64-1ef9d51c3f94.mp3",
+        "ok": false,
+        "latency_ms": 3.6,
+        "transcript_preview": ""
+      },
+      {
+        "file": "C:\\Users\\Asus\\Desktop\\Aiforbharat\\static\\audio\\70147880-3f10-4a4f-94e4-f6b6e6254a4a.mp3",
+        "ok": false,
+        "latency_ms": 4.86,
+        "transcript_preview": ""
+      },
+      {
+        "file": "C:\\Users\\Asus\\Desktop\\Aiforbharat\\static\\audio\\a53e12a2-db36-4c8b-b293-f30592a81c16.mp3",
+        "ok": false,
+        "latency_ms": 3.86,
+        "transcript_preview": ""
       }
     ]
   },
@@ -20,205 +72,146 @@
       "type": "agri_timing",
       "query": "धान की रोपाई के बाद यूरिया पहली बार कितने दिन बाद डालना चाहिए और दूसरी बार कब?",
       "response_ok": true,
-      "keyword_ok": true,
+      "keyword_ok": false,
       "tts_ok": false,
-      "hit_count": 4,
+      "hit_count": 0,
       "min_hits": 2,
-      "hit_terms": [
-        "रोपाई",
-        "यूरिया",
-        "दिन",
-        "धान"
-      ],
-      "llm_latency_ms": 844.92,
-      "tts_latency_ms": 706.89,
-      "response_preview": "धान की रोपाई के बाद पहली बार यूरिया 7-10 दिन बाद डालना चाहिए, जब पौधे 2-3 पत्तियों वाले होते हैं। दूसरी बार यूरिया 20-25 दिन बाद डालना चाहिए, जब पौधे पनीरी बनाने लगते हैं। यह समय सीमा मिट्टी और मौसम की स्थिति पर निर्भर क"
+      "hit_terms": [],
+      "llm_latency_ms": 1018.35,
+      "tts_latency_ms": 11141.3,
+      "response_preview": "I encountered an error trying to process your request."
     },
     {
       "id": "H2",
       "type": "agri_timing",
       "query": "गेहूं में पहली सिंचाई बुवाई के कितने दिन बाद करनी चाहिए? अगर ठंड ज्यादा हो तो क्या बदलना चाहिए?",
       "response_ok": true,
-      "keyword_ok": true,
+      "keyword_ok": false,
       "tts_ok": false,
-      "hit_count": 5,
+      "hit_count": 0,
       "min_hits": 2,
-      "hit_terms": [
-        "गेहूं",
-        "पहली",
-        "सिंचाई",
-        "दिन",
-        "बुवाई"
-      ],
-      "llm_latency_ms": 237.53,
-      "tts_latency_ms": 310.34,
-      "response_preview": "गेहूं में पहली सिंचाई बुवाई के 20-25 दिन बाद करनी चाहिए। अगर ठंड ज्यादा हो तो पहली सिंचाई 30-35 दिन बाद तक टाल सकते हैं।"
+      "hit_terms": [],
+      "llm_latency_ms": 6.86,
+      "tts_latency_ms": 7081.1,
+      "response_preview": "I encountered an error trying to process your request."
     },
     {
       "id": "H3",
       "type": "risk_decision",
       "query": "IMD shows 70mm rain in 2 days for tomato. Should I spray fungicide now or wait? Give practical rule.",
       "response_ok": true,
-      "keyword_ok": true,
+      "keyword_ok": false,
       "tts_ok": false,
-      "hit_count": 5,
+      "hit_count": 0,
       "min_hits": 2,
-      "hit_terms": [
-        "rain",
-        "fungicide",
-        "spray",
-        "wait",
-        "tomato"
-      ],
-      "llm_latency_ms": 369.02,
-      "tts_latency_ms": 335.61,
-      "response_preview": "For tomatoes, it's best to spray fungicide before heavy rain. Since IMD shows 70mm rain in 2 days, consider spraying fungicide today or tomorrow morning. Practical rule: if rain is expected within 24 hours, spray fungici"
+      "hit_terms": [],
+      "llm_latency_ms": 3.77,
+      "tts_latency_ms": 10175.23,
+      "response_preview": "I encountered an error trying to process your request."
     },
     {
       "id": "H4",
       "type": "nutrient_plan",
       "query": "Soil test says low zinc and medium nitrogen in paddy. Give a 30-day nutrient plan with per-acre doses.",
       "response_ok": true,
-      "keyword_ok": true,
+      "keyword_ok": false,
       "tts_ok": false,
-      "hit_count": 5,
+      "hit_count": 0,
       "min_hits": 3,
-      "hit_terms": [
-        "zinc",
-        "nitrogen",
-        "paddy",
-        "acre",
-        "plan"
-      ],
-      "llm_latency_ms": 476.51,
-      "tts_latency_ms": 328.44,
-      "response_preview": "For paddy with low zinc and medium nitrogen, apply 5 kg zinc sulfate per acre. For nitrogen, use 40 kg urea per acre, split into 20 kg at transplanting and 20 kg after 15 days. Also, add 20 kg DAP per acre at transplanti"
+      "hit_terms": [],
+      "llm_latency_ms": 4.7,
+      "tts_latency_ms": 5543.16,
+      "response_preview": "I encountered an error trying to process your request."
     },
     {
       "id": "H5",
       "type": "ipm_threshold",
       "query": "Cotton pink bollworm trap count is 8 moths/night. Is threshold crossed? What should I do this week?",
       "response_ok": true,
-      "keyword_ok": true,
+      "keyword_ok": false,
       "tts_ok": false,
-      "hit_count": 6,
+      "hit_count": 0,
       "min_hits": 2,
-      "hit_terms": [
-        "cotton",
-        "pink bollworm",
-        "threshold",
-        "trap",
-        "spray",
-        "monitor"
-      ],
-      "llm_latency_ms": 360.49,
-      "tts_latency_ms": 325.35,
-      "response_preview": "The threshold for cotton pink bollworm is 5 moths/night. Since your trap count is 8 moths/night, the threshold is crossed. This week, consider spraying insecticides and removing infested fruits to control the infestation"
+      "hit_terms": [],
+      "llm_latency_ms": 3.34,
+      "tts_latency_ms": 11212.14,
+      "response_preview": "I encountered an error trying to process your request."
     },
     {
       "id": "H6",
       "type": "market_economics",
       "query": "Onion mandi price is ₹1500/quintal. Store for 20 days or sell now? Assume 2% loss and storage cost.",
       "response_ok": true,
-      "keyword_ok": true,
+      "keyword_ok": false,
       "tts_ok": false,
-      "hit_count": 6,
+      "hit_count": 0,
       "min_hits": 3,
-      "hit_terms": [
-        "onion",
-        "store",
-        "sell",
-        "loss",
-        "cost",
-        "price"
-      ],
-      "llm_latency_ms": 412.57,
-      "tts_latency_ms": 345.28,
-      "response_preview": "If you store onions for 20 days, you'll incur a 2% loss and storage cost. Considering this, it's better to sell now at ₹1500/quintal. Storing may not fetch a higher price after 20 days, and you'll also have to bear the s"
+      "hit_terms": [],
+      "llm_latency_ms": 2.91,
+      "tts_latency_ms": 6115.76,
+      "response_preview": "I encountered an error trying to process your request."
     },
     {
       "id": "H7",
       "type": "pest_weather",
       "query": "सरसों में माहू लग गया है और बारिश आने वाली है। दवा कब छिड़कूं और कितने अंतराल पर?",
       "response_ok": true,
-      "keyword_ok": true,
+      "keyword_ok": false,
       "tts_ok": false,
-      "hit_count": 6,
+      "hit_count": 0,
       "min_hits": 2,
-      "hit_terms": [
-        "माहू",
-        "सरसों",
-        "बारिश",
-        "छिड़क",
-        "अंतराल",
-        "दवा"
-      ],
-      "llm_latency_ms": 662.76,
-      "tts_latency_ms": 312.93,
-      "response_preview": "सरसों में माहू की समस्या होना आम बात है। बारिश आने से पहले दवा छिड़कना अच्छा होगा। आप रोगनाशक दवा का छिड़काव करें और 10-15 दिनों के अंतराल पर दोबारा छिड़काव करें। लेकिन अगर बारिश ज्यादा हो रही है तो आपको दवा का छिड़काव द"
+      "hit_terms": [],
+      "llm_latency_ms": 2.37,
+      "tts_latency_ms": 7153.17,
+      "response_preview": "I encountered an error trying to process your request."
     },
     {
       "id": "H8",
       "type": "water_management",
       "query": "For drip chili in 42C heatwave, give morning-evening irrigation schedule for next 5 days.",
       "response_ok": true,
-      "keyword_ok": true,
+      "keyword_ok": false,
       "tts_ok": false,
-      "hit_count": 5,
+      "hit_count": 0,
       "min_hits": 3,
-      "hit_terms": [
-        "drip",
-        "chili",
-        "irrigation",
-        "morning",
-        "evening"
-      ],
-      "llm_latency_ms": 448.53,
-      "tts_latency_ms": 347.96,
-      "response_preview": "In 42C heat, drip irrigation for chili needs careful planning. For the next 5 days, water your chili plants in two shifts: morning (6-7 am) and evening (5-6 pm). Give 30 minutes of water in the morning and 45 minutes in "
+      "hit_terms": [],
+      "llm_latency_ms": 5.3,
+      "tts_latency_ms": 10288.9,
+      "response_preview": "I encountered an error trying to process your request."
     },
     {
       "id": "H9",
       "type": "scheme_troubleshooting",
       "query": "PM-KISAN installment नहीं आई, DBT pending दिखा रहा है. Step-by-step complaint process बताओ.",
       "response_ok": true,
-      "keyword_ok": true,
+      "keyword_ok": false,
       "tts_ok": false,
-      "hit_count": 4,
+      "hit_count": 0,
       "min_hits": 2,
-      "hit_terms": [
-        "pm-kisan",
-        "शिकायत",
-        "हेल्पलाइन",
-        "ईमेल"
-      ],
-      "llm_latency_ms": 701.64,
-      "tts_latency_ms": 347.89,
-      "response_preview": "PM-KISAN की किश्त नहीं मिली तो चिंता न करें। पहले पोर्टल पर स्टेटस चेक करें, फिर eKYC और बैंक खाते की जानकारी सही है कि नहीं देखें। अगर सब ठीक है तो अपने नजदीकी कृषि कार्यालय या CSC में संपर्क करें। अगर समस्या बनी रहे तो"
+      "hit_terms": [],
+      "llm_latency_ms": 25.26,
+      "tts_latency_ms": 10064.68,
+      "response_preview": "I encountered an error trying to process your request."
     },
     {
       "id": "H10",
       "type": "resource_optimization",
       "query": "I have 3 acres maize+paddy and pump runs only 2 hours/day. Optimize 7-day water allocation.",
       "response_ok": true,
-      "keyword_ok": true,
+      "keyword_ok": false,
       "tts_ok": false,
-      "hit_count": 3,
+      "hit_count": 0,
       "min_hits": 3,
-      "hit_terms": [
-        "maize",
-        "paddy",
-        "water"
-      ],
-      "llm_latency_ms": 395.83,
-      "tts_latency_ms": 343.03,
-      "response_preview": "For 3 acres of maize and paddy, prioritize maize on days 1, 3, and 5, and paddy on days 2, 4, and 6. On day 7, water both equally. Adjust based on weather and soil moisture: if it rains, skip a day; if it's very dry, add"
+      "hit_terms": [],
+      "llm_latency_ms": 4.76,
+      "tts_latency_ms": 7475.79,
+      "response_preview": "I encountered an error trying to process your request."
     }
   ],
   "summary": {
     "total_cases": 10,
     "response_pass": 10,
-    "keyword_pass": 10,
+    "keyword_pass": 0,
     "tts_pass": 0,
     "full_pass": 0
   }

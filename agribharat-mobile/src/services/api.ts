@@ -1,31 +1,21 @@
-﻿import Constants from 'expo-constants';
-import axios, { AxiosInstance, AxiosError } from 'axios';
+﻿import axios, { AxiosInstance, AxiosError } from 'axios';
 import * as SecureStore from 'expo-secure-store';
 
-// Try ADB reverse (localhost) first, then WiFi IP as fallback
-// For native builds: adb reverse tcp:8000 tcp:8000 makes localhost:8000 go to laptop
-const PRIMARY_URL = 'http://localhost:8000/api/v1';
-const FALLBACK_URL = 'http://192.168.29.111:8000/api/v1';
+// Same live API as web frontend — backend prefix is /api/v1
+const API_URL = 'https://kisaanai.duckdns.org/api/v1';
 
 class ApiClient {
   private client: AxiosInstance;
-  private activeUrl: string;
 
   constructor() {
-    this.activeUrl = PRIMARY_URL;
-    this.client = this.createClient(this.activeUrl);
-    // Try primary, fallback silently
-    this.detectWorkingUrl();
-  }
-
-  private createClient(baseURL: string): AxiosInstance {
-    const c = axios.create({
-      baseURL,
-      timeout: 12000,
+    this.client = axios.create({
+      baseURL: API_URL,
+      timeout: 30000,
       headers: { 'Content-Type': 'application/json' },
     });
 
-    c.interceptors.request.use(async (config) => {
+    // Auth interceptor
+    this.client.interceptors.request.use(async (config) => {
       try {
         const token = await SecureStore.getItemAsync('access_token');
         if (token) config.headers.Authorization = `Bearer ${token}`;
@@ -33,7 +23,7 @@ class ApiClient {
       return config;
     });
 
-    c.interceptors.response.use(
+    this.client.interceptors.response.use(
       (r) => r,
       async (err: AxiosError) => {
         if (err.response?.status === 401) {
@@ -42,118 +32,97 @@ class ApiClient {
         return Promise.reject(err);
       }
     );
-    return c;
   }
 
-  public getAxios(): AxiosInstance {
-    return this.client;
+  // ─── Stats (matches web: MagicDashboard fetchStats) ───
+  async getStats() {
+    const [mandisRes, commoditiesRes, statesRes] = await Promise.allSettled([
+      this.client.get('/mandis', { params: { page_size: 1 } }),
+      this.client.get('/commodities', { params: { page_size: 1 } }),
+      this.client.get('/mandis/states'),
+    ]);
+    return {
+      totalMandis: mandisRes.status === 'fulfilled' ? (mandisRes.value.data?.total || 0) : 0,
+      totalCommodities: commoditiesRes.status === 'fulfilled' ? (commoditiesRes.value.data?.total || (Array.isArray(commoditiesRes.value.data) ? commoditiesRes.value.data.length : 0)) : 0,
+      totalStates: statesRes.status === 'fulfilled' ? (Array.isArray(statesRes.value.data) ? statesRes.value.data.length : 0) : 0,
+    };
   }
 
-  private async detectWorkingUrl() {
-    // Try localhost first (ADB reverse)
-    try {
-      await axios.get(`${PRIMARY_URL}/commodities`, { timeout: 3000 });
-      this.activeUrl = PRIMARY_URL;
-      this.client = this.createClient(PRIMARY_URL);
-      console.log('[API] ✅ Using localhost (ADB reverse)');
-      return;
-    } catch {}
-
-    // Try WiFi IP
-    try {
-      await axios.get(`${FALLBACK_URL}/commodities`, { timeout: 3000 });
-      this.activeUrl = FALLBACK_URL;
-      this.client = this.createClient(FALLBACK_URL);
-      console.log('[API] ✅ Using WiFi IP');
-      return;
-    } catch {}
-
-    console.log('[API] ⚠️ No backend reachable, using localhost');
-    this.activeUrl = PRIMARY_URL;
-    this.client = this.createClient(PRIMARY_URL);
+  // ─── Gainers & Losers (matches web: separate /prices/gainers and /prices/losers) ───
+  async getGainers(limit = 4) {
+    const r = await this.client.get('/prices/gainers', { params: { period: 7, limit } });
+    return r.data || [];
+  }
+  async getLosers(limit = 4) {
+    const r = await this.client.get('/prices/losers', { params: { period: 7, limit } });
+    return r.data || [];
   }
 
-  // ─── Dashboard ───
-  async getDashboardStats() {
-    try { return (await this.client.get('/prices/dashboard-stats')).data; }
-    catch { return { total_mandis: 20, total_commodities: 8, total_states: 11 }; }
+  // ─── Weather (matches web: /weather/forecast) ───
+  async getWeather(lat = 22.7196, lon = 75.8577, days = 3) {
+    const r = await this.client.get('/weather/forecast', { params: { lat, lon, days } });
+    return r.data || [];
   }
 
-  // ─── Commodities ───
-  async getCommodities(): Promise<any[]> {
-    try { return (await this.client.get('/commodities')).data?.items || []; }
-    catch { return []; }
-  }
-
-  // ─── Mandis ───
-  async getMandis(params?: any): Promise<any[]> {
-    try { return (await this.client.get('/mandis', { params: { page_size: 50, ...params } })).data?.items || []; }
-    catch { return []; }
-  }
-  async getMandiStates(): Promise<string[]> {
-    try { return (await this.client.get('/mandis/states')).data || []; }
-    catch { return []; }
-  }
-
-  // ─── Prices ───
-  async getPrices(params: any): Promise<any[]> {
-    try { return (await this.client.get('/prices', { params: { page_size: 200, ...params } })).data?.items || []; }
-    catch { return []; }
-  }
-  async getPriceTrend(commodityId: number, days = 30): Promise<any[]> {
-    try { return (await this.client.get(`/prices/trend/${commodityId}`, { params: { days } })).data || []; }
-    catch { return []; }
-  }
-  async getCurrentPrices(commodityId: number): Promise<any[]> {
-    try { return (await this.client.get(`/prices/current/commodity/${commodityId}`, { params: { limit: 10 } })).data || []; }
-    catch { return []; }
-  }
-  async getGainersLosers(): Promise<any> {
-    try { return (await this.client.get('/prices/gainers-losers')).data; }
-    catch { return { gainers: [], losers: [] }; }
-  }
-
-  // ─── Forecasts ───
-  async getForecast(commodityId: number): Promise<any> {
-    try { return (await this.client.get(`/forecasts/${commodityId}/1`, { params: { horizon_days: 7 } })).data; }
-    catch { return null; }
-  }
-
-  // ─── Weather ───
-  async getWeather(lat = 22.7196, lon = 75.8577): Promise<any[]> {
-    try { return (await this.client.get('/weather/forecast', { params: { lat, lon, days: 3 } })).data || []; }
-    catch { return []; }
-  }
-
-  // ─── Live Prices (data.gov.in) ───
-  async getLivePrices(params?: { state?: string; commodity?: string; limit?: number }): Promise<any> {
-    try {
-      const r = await this.client.get('/prices/live', { params: { limit: 30, ...params } });
-      return r.data;
-    } catch { return { records: [], total: 0 }; }
-  }
-
-  // ─── Voice (text → LLM → TTS) ───
-  async sendVoiceText(text: string, language = 'hi-IN'): Promise<any> {
-    const r = await this.client.post('/voice/text', { text, language });
+  // ─── Live Prices ───
+  async getLivePrices(params?: { state?: string; commodity?: string; limit?: number }) {
+    const r = await this.client.get('/prices/live', { params: { limit: 30, ...params } });
     return r.data;
   }
 
-  // ─── Voice (audio → Sarvam STT → Groq AI → Sarvam TTS) ───
-  async sendVoiceAudio(fileUri: string, language = 'hi-IN'): Promise<any> {
+  // ─── Commodities ───
+  async getCommodities() {
+    const r = await this.client.get('/commodities');
+    return r.data?.items || r.data || [];
+  }
+
+  // ─── Mandis ───
+  async getMandis(params?: any) {
+    const r = await this.client.get('/mandis', { params: { page_size: 50, ...params } });
+    return r.data?.items || r.data || [];
+  }
+  async getMandiStates() {
+    const r = await this.client.get('/mandis/states');
+    return r.data || [];
+  }
+
+  // ─── Prices ───
+  async getPrices(params: any) {
+    const r = await this.client.get('/prices', { params: { page_size: 200, ...params } });
+    return r.data?.items || r.data || [];
+  }
+  async getPriceTrend(commodityId: number, days = 30) {
+    const r = await this.client.get(`/prices/trend/${commodityId}`, { params: { days } });
+    return r.data || [];
+  }
+  async getCurrentPrices(commodityId: number) {
+    const r = await this.client.get(`/prices/current/commodity/${commodityId}`, { params: { limit: 10 } });
+    return r.data || [];
+  }
+
+  // Expose axios instance for screens that need direct access
+  getAxios(): AxiosInstance {
+    return this.client;
+  }
+
+  // ─── Forecasts ───
+  async getForecast(commodityId: number) {
+    const r = await this.client.get(`/forecasts/${commodityId}/1`, { params: { horizon_days: 7 } });
+    return r.data;
+  }
+
+  // ─── Voice ───
+  async sendVoiceText(text: string, language = 'hi-IN') {
+    const r = await this.client.post('/voice/text', { text, language });
+    return r.data;
+  }
+  async sendVoiceAudio(fileUri: string, language = 'hi-IN') {
     const formData = new FormData();
-    // Expo audio on Android/iOS uses .m4a format typically when using HIGH_QUALITY
     const filename = fileUri.split('/').pop() || 'recording.m4a';
     const match = /\.(\w+)$/.exec(filename);
     const type = match ? `audio/${match[1]}` : 'audio/m4a';
-
-    formData.append('file', {
-      uri: fileUri,
-      type: type,
-      name: filename,
-    } as any);
+    formData.append('file', { uri: fileUri, type, name: filename } as any);
     formData.append('language', language);
-
     const r = await this.client.post('/voice/query', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
       timeout: 30000,
@@ -162,9 +131,33 @@ class ApiClient {
   }
 
   // ─── News ───
-  async getNews(): Promise<any[]> {
-    try { return (await this.client.get('/news/news')).data || []; }
-    catch { return []; }
+  async getNews() {
+    const r = await this.client.get('/news');
+    return r.data || [];
+  }
+
+  // ─── Community ───
+  async getCommunityNotes() {
+    const r = await this.client.get('/community/notes');
+    return r.data || [];
+  }
+  async postCommunityNote(formData: FormData) {
+    return this.client.post('/community/notes', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      timeout: 30000,
+    });
+  }
+  async likeCommunityNote(noteId: string) {
+    return this.client.post(`/community/notes/${noteId}/like`);
+  }
+
+  // ─── Diseases ───
+  async diagnosePlant(formData: FormData) {
+    const r = await this.client.post('/diseases/diagnose', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      timeout: 30000,
+    });
+    return r.data;
   }
 
   // ─── Auth ───
@@ -178,8 +171,8 @@ class ApiClient {
     return r.data;
   }
   async getProfile() {
-    try { return (await this.client.get('/auth/me')).data; }
-    catch { return null; }
+    const r = await this.client.get('/auth/me');
+    return r.data;
   }
 }
 
