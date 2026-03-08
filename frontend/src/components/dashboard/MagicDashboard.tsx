@@ -217,7 +217,7 @@ export function MagicDashboard() {
       href: "/community",
       cta: "Join Discussion",
       background: <div className="absolute inset-0 bg-gradient-to-br from-purple-100/50 via-purple-50/30 to-transparent opacity-100" />,
-      className: "md:col-span-2 lg:col-span-2 border-purple-100 bg-purple-50/30 dark:bg-purple-950/20 dark:border-purple-900/50",
+      className: "md:col-span-3 lg:col-span-3 !h-[8rem] md:!h-[10rem] border-purple-100 bg-purple-50/30 dark:bg-purple-950/20 dark:border-purple-900/50",
       iconClassName: "text-purple-700 dark:text-purple-400",
     },
   ];
