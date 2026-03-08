@@ -1,4 +1,8 @@
-# Dependencies
+# ============================================
+# KisaanAI - Comprehensive .gitignore
+# ============================================
+
+# ---- Dependencies ----
 node_modules/
 .pnp
 .pnp.js
@@ -7,45 +11,107 @@ venv/
 env/
 __pycache__/
 *.py[cod]
-
-# Testing
-.coverage
-htmlcov/
-.pytest_cache/
-.playwright-mcp/
-
-# Next.js
-.next/
-out/
-build/
+*$py.class
+*.egg-info/
 dist/
+build/
+*.egg
 
-# System Files
-.DS_Store
-Thumbs.db
-nul
-
-# Environment Variables
+# ---- Environment Variables (SECRETS) ----
 .env
 .env.local
+.env.production
 .env.development.local
 .env.test.local
 .env.production.local
 SECRETS.md
 
-# SSH Keys
+# ---- SSH Keys & Certificates ----
 *.pem
 *.key
+*.crt
+*.csr
 kisaanai.pem
 
-# IDEs
+# ---- Next.js ----
+.next/
+out/
+
+# ---- Python Testing ----
+.coverage
+htmlcov/
+.pytest_cache/
+.tox/
+.mypy_cache/
+
+# ---- Databases ----
+*.db
+*.sqlite3
+agri.db
+
+# ---- Audio/Video Test Files ----
+*.wav
+*.mp3
+*.pcm
+test_audio.*
+test_output_*
+test_polly_*
+test_sarvam_*
+ui-videos/
+
+# ---- Test Files with Secrets (DO NOT COMMIT) ----
+test_bedrock_vision.py
+test_polly_tts.py
+DEPLOY_COMMANDS.sh
+DEPLOY_NOW_QUICK.md
+SSH_COMMANDS.txt
+
+# ---- Presentation Files ----
+*.pptx
+*.pdf
+presentation_assets/
+pptx_content.txt
+pptx_structure.txt
+
+# ---- Test Results & Reports ----
+test-results-*.json
+test_report_*.json
+test_report_*.md
+test_results.txt
+result.txt
+browser-smoke-report.json
+browser-smoke-server.log
+start-test.log
+
+# ---- System Files ----
+.DS_Store
+Thumbs.db
+nul
+desktop.ini
+
+# ---- IDEs & Tools ----
 .vscode/
 .idea/
 .claude/
-horizon-ui-ref/
+.kiro/
+.gemini/
+.playwright-mcp/
 
-# Logs
+# ---- Logs ----
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 *.log
+
+# ---- Generated/Misc ----
+static/
+horizon-ui-ref/
+Scribe*
+
+# ---- Project Organization (archive/docs folder) ----
+archive/
+docs/
+tests/
+deploy/
+kisaanai-video/
+presentation_assets/
