@@ -4,10 +4,12 @@ Amazon S3 Service for KisaanAI.
 Handles image uploads for crop disease detection and other media storage.
 """
 import boto3
-from botocore.exceptions import ClientError
+from botocore.exceptions import BotoCoreError, ClientError
 import logging
 from datetime import datetime
 import uuid
+from pathlib import Path
+import re
 from typing import Optional, Dict
 from app.config import settings
 
@@ -29,12 +31,19 @@ class S3Service:
         aws_access_key_id: Optional[str] = None,
         aws_secret_access_key: Optional[str] = None,
         aws_region: Optional[str] = None,
-        bucket_name: Optional[str] = None
+        bucket_name: Optional[str] = None,
+        local_upload_dir: Optional[str] = None,
     ):
         self.aws_access_key_id = aws_access_key_id or settings.AWS_ACCESS_KEY_ID
         self.aws_secret_access_key = aws_secret_access_key or settings.AWS_SECRET_ACCESS_KEY
         self.aws_region = aws_region or settings.AWS_REGION
         self.bucket = bucket_name or getattr(settings, 'AWS_S3_BUCKET', 'kisaanai-uploads')
+        self.static_root = Path(__file__).resolve().parents[2] / "static"
+        configured_local_dir = Path(local_upload_dir or "uploads")
+        if not configured_local_dir.is_absolute():
+            configured_local_dir = self.static_root / configured_local_dir
+        self.local_upload_dir = configured_local_dir
+        self.local_upload_dir.mkdir(parents=True, exist_ok=True)
         self._client = None
     
     @property
@@ -52,6 +61,37 @@ class S3Service:
     def is_configured(self) -> bool:
         """Check if AWS credentials are available."""
         return bool(self.aws_access_key_id and self.aws_secret_access_key)
+
+    def _sanitize_filename(self, filename: str) -> str:
+        safe_name = Path(filename or "upload.jpg").name
+        safe_name = re.sub(r"[^A-Za-z0-9._-]+", "_", safe_name).strip("._")
+        return safe_name or "upload.jpg"
+
+    async def save_local_image(
+        self,
+        file_data: bytes,
+        filename: str,
+    ) -> Dict:
+        """Persist an uploaded image locally when S3 is unavailable."""
+        date_path = datetime.now().strftime('%Y/%m/%d')
+        target_dir = self.local_upload_dir / "crops" / date_path
+        target_dir.mkdir(parents=True, exist_ok=True)
+
+        safe_name = self._sanitize_filename(filename)
+        unique_id = str(uuid.uuid4())
+        file_path = target_dir / f"{unique_id}_{safe_name}"
+        relative_path = file_path.resolve().relative_to(self.static_root.resolve())
+        file_path.write_bytes(file_data)
+
+        logger.info("Saved uploaded image locally: %s", file_path)
+        relative_url = str(relative_path).replace("\\", "/")
+        return {
+            'success': True,
+            'key': relative_url,
+            'url': f"/static/{relative_url}",
+            'bucket': 'local-static',
+            'storage': 'local',
+        }
     
     async def upload_image(
         self, 
@@ -71,8 +111,10 @@ class S3Service:
             Dict with success, key, and url
         """
         if not self.is_configured():
-            logger.warning("AWS credentials not configured for S3")
-            return {'success': False, 'error': 'S3 not configured'}
+            logger.warning("AWS credentials not configured for S3, using local fallback")
+            local_result = await self.save_local_image(file_data, filename)
+            local_result['error'] = 'S3 not configured'
+            return local_result
         
         try:
             # Generate unique key with date-based folder structure
@@ -104,15 +146,15 @@ class S3Service:
                 'success': True,
                 'key': key,
                 'url': url,
-                'bucket': self.bucket
+                'bucket': self.bucket,
+                'storage': 's3',
             }
             
-        except ClientError as e:
+        except (ClientError, BotoCoreError, OSError) as e:
             logger.error(f"S3 upload error: {e}")
-            return {
-                'success': False,
-                'error': str(e)
-            }
+            local_result = await self.save_local_image(file_data, filename)
+            local_result['error'] = str(e)
+            return local_result
     
     async def get_image_url(self, key: str, expires_in: int = 3600) -> Optional[str]:
         """

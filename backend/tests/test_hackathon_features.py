@@ -1,6 +1,11 @@
 import pytest
+from pathlib import Path
+from botocore.exceptions import ClientError
 from fastapi.testclient import TestClient
 from app.main import app
+from app.api import diseases as diseases_api
+from app.services.disease_service import DiseasePrediction, DiseaseService
+from app.services.s3_service import S3Service
 
 client = TestClient(app)
 
@@ -85,3 +90,89 @@ class TestHackathonFeatures:
         assert like_response.status_code == 200
         updated_note = like_response.json()
         assert updated_note["likes"] == 1
+
+    def test_disease_diagnose_uses_local_storage_fallback_when_s3_fails(self, monkeypatch):
+        """Diagnosis should still succeed and persist the image locally when S3 is unavailable."""
+
+        async def fake_upload_image(*args, **kwargs):
+            return {
+                "success": True,
+                "error": "NoSuchBucket",
+                "url": "/static/uploads/crops/test/test_blight.png",
+                "key": "uploads/crops/test/test_blight.png",
+                "storage": "local",
+            }
+
+        async def fake_predict(self, image_bytes, filename):
+            return DiseasePrediction(
+                disease_name="Tomato Early Blight",
+                confidence=0.91,
+                treatment="Remove infected leaves and apply a recommended fungicide.",
+                severity="Moderate",
+            )
+
+        async def fake_put_metric(*args, **kwargs):
+            return None
+
+        async def fake_put_metrics_batch(*args, **kwargs):
+            return None
+
+        monkeypatch.setattr(diseases_api.s3_service, "upload_image", fake_upload_image)
+        monkeypatch.setattr(diseases_api.DiseaseService, "predict", fake_predict)
+        monkeypatch.setattr(diseases_api.cloudwatch_service, "put_metric", fake_put_metric)
+        monkeypatch.setattr(diseases_api.cloudwatch_service, "put_metrics_batch", fake_put_metrics_batch)
+
+        test_image = Path(__file__).resolve().parents[1] / "test_blight.png"
+        with test_image.open("rb") as image_file:
+            response = client.post(
+                "/api/v1/diseases/diagnose",
+                files={"file": ("test_blight.png", image_file, "image/png")},
+            )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["disease_name"] == "Tomato Early Blight"
+        assert data["image_url"].endswith("/static/uploads/crops/test/test_blight.png")
+        assert data["s3_key"] == "uploads/crops/test/test_blight.png"
+        assert data["storage_mode"] == "local"
+        assert data["confidence"] == pytest.approx(0.91)
+
+    @pytest.mark.asyncio
+    async def test_s3_service_falls_back_to_local_file_storage(self):
+        """S3 service should store files locally when S3 returns NoSuchBucket."""
+
+        class FakeS3Client:
+            def put_object(self, **kwargs):
+                raise ClientError(
+                    {"Error": {"Code": "NoSuchBucket", "Message": "bucket missing"}},
+                    "PutObject",
+                )
+
+        service = S3Service(
+            aws_access_key_id="key",
+            aws_secret_access_key="secret",
+            bucket_name="missing-bucket",
+            local_upload_dir="test-uploads",
+        )
+        service._client = FakeS3Client()
+
+        result = await service.upload_image(b"fake-image-bytes", "leaf sample.jpg")
+
+        assert result["success"] is True
+        assert result["storage"] == "local"
+        assert result["url"].startswith("/static/test-uploads/crops/")
+        saved_file = Path(__file__).resolve().parents[1] / "static" / result["key"]
+        assert saved_file.exists()
+
+    @pytest.mark.asyncio
+    async def test_disease_service_uses_offline_filename_fallback(self):
+        """Disease service should still return a diagnosis in restricted environments."""
+
+        service = DiseaseService()
+        service._bedrock = None
+        service._token = None
+
+        result = await service.predict(b"image-bytes", "tomato-late_blight-web.jpg")
+
+        assert result.disease_name == "Tomato Late Blight"
+        assert result.confidence == pytest.approx(0.85)

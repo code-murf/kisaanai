@@ -94,6 +94,7 @@ class Settings(BaseSettings):
     AWS_ACCESS_KEY_ID: str = ""
     AWS_SECRET_ACCESS_KEY: str = ""
     AWS_REGION: str = "ap-south-1"
+    AWS_S3_BUCKET: str = "kisaanai-uploads"
 
     # AWS Bedrock
     AWS_BEDROCK_REGION: str = "us-east-1"

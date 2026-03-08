@@ -2,6 +2,7 @@
 Main FastAPI application for the Agri-Analytics platform.
 """
 from contextlib import asynccontextmanager
+from pathlib import Path
 from typing import AsyncGenerator
 import logging
 
@@ -9,6 +10,7 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
+from fastapi.staticfiles import StaticFiles
 
 from app.config import settings
 from app.core.rate_limit import setup_rate_limiting
@@ -101,6 +103,10 @@ Include the token in the Authorization header: `Bearer <token>`
         allow_methods=["*"],
         allow_headers=["*"],
     )
+
+    static_dir = Path(__file__).resolve().parents[1] / "static"
+    static_dir.mkdir(parents=True, exist_ok=True)
+    app.mount("/static", StaticFiles(directory=static_dir), name="static")
     
     # Include routers
     app.include_router(auth.router, prefix="/api/v1")

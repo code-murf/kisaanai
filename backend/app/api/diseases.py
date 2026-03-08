@@ -1,11 +1,12 @@
 """
 Disease Detection API Router with S3 and CloudWatch integration.
 """
-from fastapi import APIRouter, UploadFile, File, HTTPException
+from fastapi import APIRouter, UploadFile, File, HTTPException, Request
 from pydantic import BaseModel
 from datetime import datetime
 import time
 import logging
+from typing import Optional
 
 from app.services.disease_service import DiseaseService
 from app.services.s3_service import s3_service
@@ -20,41 +21,43 @@ class DiseaseResponse(BaseModel):
     confidence: float
     treatment: str
     severity: str
-    image_url: str = None
-    s3_key: str = None
-    timestamp: str = None
+    image_url: Optional[str] = None
+    s3_key: Optional[str] = None
+    storage_mode: Optional[str] = None
+    timestamp: Optional[str] = None
 
 @router.post("/diagnose", response_model=DiseaseResponse)
-async def diagnose_plant(file: UploadFile = File(...)):
+async def diagnose_plant(request: Request, file: UploadFile = File(...)):
     """
     Diagnose plant disease from an uploaded image.
     Uploads image to S3 and records CloudWatch metrics.
     """
     start_time = time.time()
     service = DiseaseService()
+    upload_result = {'success': False, 'error': None, 'url': None, 'key': None, 'storage': None}
     
     try:
         contents = await file.read()
         
         # Upload to S3
-        s3_result = await s3_service.upload_image(
+        upload_result = await s3_service.upload_image(
             contents,
             file.filename,
             file.content_type or 'image/jpeg'
         )
-        
-        if not s3_result['success']:
-            logger.error(f"S3 upload failed: {s3_result.get('error')}")
+
+        if upload_result.get('error'):
+            logger.warning(
+                "Primary storage upload failed, using %s fallback: %s",
+                upload_result.get('storage') or 'no',
+                upload_result.get('error'),
+            )
             await cloudwatch_service.put_metric(
-                'APIErrors', 1,
+                'StorageWarnings', 1,
                 dimensions=[
-                    {'Name': 'ErrorType', 'Value': 'S3UploadFailed'},
+                    {'Name': 'WarningType', 'Value': 'S3UploadFailed'},
                     {'Name': 'Endpoint', 'Value': 'diseases'}
                 ]
-            )
-            raise HTTPException(
-                status_code=500,
-                detail=f"Failed to upload image to storage: {s3_result.get('error')}"
             )
         
         # ML inference
@@ -67,15 +70,24 @@ async def diagnose_plant(file: UploadFile = File(...)):
             {'name': 'DiseaseAPIRequests', 'value': 1}
         ])
         
-        logger.info(f"Disease diagnosis completed in {latency:.2f}ms, S3 key: {s3_result['key']}")
+        logger.info(
+            "Disease diagnosis completed in %.2fms, storage_key=%s",
+            latency,
+            upload_result.get('key') if upload_result.get('success') else 'unavailable',
+        )
+
+        image_url = upload_result.get('url') if upload_result.get('success') else None
+        if image_url and image_url.startswith("/"):
+            image_url = f"{str(request.base_url).rstrip('/')}{image_url}"
         
         return DiseaseResponse(
             disease_name=prediction.disease_name,
             confidence=prediction.confidence,
             treatment=prediction.treatment,
             severity=prediction.severity,
-            image_url=s3_result.get('url'),
-            s3_key=s3_result.get('key'),
+            image_url=image_url,
+            s3_key=upload_result.get('key') if upload_result.get('success') else None,
+            storage_mode=upload_result.get('storage') if upload_result.get('success') else None,
             timestamp=datetime.now().isoformat()
         )
         
