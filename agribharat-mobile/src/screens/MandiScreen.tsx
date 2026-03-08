@@ -1,429 +1,139 @@
-﻿import React, { useState, useEffect, useMemo } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, ActivityIndicator } from 'react-native';
+﻿import React, { useState, useEffect } from 'react';
+import {
+  View, Text, StyleSheet, ScrollView, TouchableOpacity,
+  TextInput, ActivityIndicator, RefreshControl,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { MapPin, Navigation, TrendingUp, Search, AlertCircle } from 'lucide-react-native';
-import { COLORS, COMMODITIES } from '../constants';
+import { MapPin, Search, ChevronRight } from 'lucide-react-native';
+import { COLORS } from '../constants';
 import { useAppStore } from '../store/useAppStore';
 import { api } from '../services/api';
 
-type MandiCard = {
-  id: number;
-  name: string;
-  district: string;
-  state: string;
-  price: number | null;
-  distance: number | null;
-  arrival: number | null;
-};
+const C = { bg: '#000', card: '#111', border: '#1c1c1e', muted: '#8e8e93', green: '#34c759', white: '#fff' };
 
 export default function MandiScreen() {
-  const { selectedLanguage, selectedCommodity } = useAppStore();
-  const [searchQuery, setSearchQuery] = useState('');
-  const [sortBy, setSortBy] = useState<'price' | 'distance'>('price');
-  const [mandis, setMandis] = useState<MandiCard[]>([]);
+  const { selectedLanguage } = useAppStore();
+  const hi = selectedLanguage === 'hi';
+  const [mandis, setMandis] = useState<any[]>([]);
+  const [prices, setPrices] = useState<Map<number, any>>(new Map());
+  const [search, setSearch] = useState('');
+  const [selectedState, setSelectedState] = useState<string | null>(null);
+  const [states, setStates] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
 
-  const selectedCommodityId = useMemo(() => {
-    return COMMODITIES.find((c) => c.value === selectedCommodity)?.id ?? 1;
-  }, [selectedCommodity]);
+  const load = async (refresh = false) => {
+    if (refresh) setRefreshing(true); else setLoading(true);
+    try {
+      const [m, st, p] = await Promise.all([
+        api.getMandis({ page_size: 50 }), api.getMandiStates(), api.getPrices({ commodity_id: 1, page_size: 200 }),
+      ]);
+      setMandis(m); setStates(st);
+      const pm = new Map<number, any>();
+      for (const pr of p) pm.set(pr.mandi_id, pr);
+      setPrices(pm);
+    } catch {} finally { setLoading(false); setRefreshing(false); }
+  };
 
-  useEffect(() => {
-    let mounted = true;
+  useEffect(() => { load(); }, []);
 
-    const loadMandis = async () => {
-      setLoading(true);
-      setError(null);
-
-      try {
-        const [nearby, prices] = await Promise.all([
-          api.getNearbyMandis(28.6139, 77.209, 80),
-          api.getCurrentPrice(selectedCommodityId),
-        ]);
-
-        const priceByMandi = new Map<number, any>();
-        for (const row of prices) {
-          priceByMandi.set(row.mandi_id, row);
-        }
-
-        const merged: MandiCard[] = nearby.map((m) => {
-          const priceRow = priceByMandi.get(m.id);
-          return {
-            id: m.id,
-            name: m.name,
-            district: m.district,
-            state: m.state,
-            distance: typeof m.distance_km === 'number' ? Number(m.distance_km.toFixed(1)) : null,
-            price: typeof priceRow?.modal_price === 'number' ? priceRow.modal_price : null,
-            arrival: typeof priceRow?.arrival_qty === 'number' ? priceRow.arrival_qty : null,
-          };
-        });
-
-        if (mounted) {
-          setMandis(merged);
-        }
-      } catch (e) {
-        if (mounted) {
-          setError(e instanceof Error ? e.message : 'Failed to load mandi data');
-          setMandis([]);
-        }
-      } finally {
-        if (mounted) {
-          setLoading(false);
-        }
-      }
-    };
-
-    loadMandis();
-
-    return () => {
-      mounted = false;
-    };
-  }, [selectedCommodityId]);
-
-  const filteredMandis = mandis
-    .filter((m) => m.name.toLowerCase().includes(searchQuery.toLowerCase()))
-    .sort((a, b) => {
-      if (sortBy === 'price') {
-        return (b.price ?? -1) - (a.price ?? -1);
-      }
-      return (a.distance ?? Number.MAX_VALUE) - (b.distance ?? Number.MAX_VALUE);
-    });
+  const filtered = mandis.filter((m) => {
+    const ms = !search || m.name?.toLowerCase().includes(search.toLowerCase()) || m.district?.toLowerCase().includes(search.toLowerCase());
+    const mst = !selectedState || m.state === selectedState;
+    return ms && mst;
+  });
 
   return (
-    <SafeAreaView style={styles.container} edges={['bottom']}>
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        <View style={styles.header}>
-          <Text style={styles.title}>{selectedLanguage === 'hi' ? '??????? ???????' : 'Nearby Mandis'}</Text>
-          <Text style={styles.subtitle}>
-            {selectedLanguage === 'hi'
-              ? '???? ??? ????? ?? ??? ???? ????? ???? ?????'
-              : 'Find the best market to sell your produce'}
-          </Text>
-        </View>
+    <SafeAreaView style={s.container} edges={['top']}>
+      {/* Header */}
+      <View style={s.header}>
+        <Text style={s.headerTitle}>{hi ? 'मंडी' : 'Mandis'}</Text>
+        <Text style={s.headerCount}>{filtered.length} {hi ? 'मिलीं' : 'found'}</Text>
+      </View>
 
-        <View style={styles.searchContainer}>
-          <Search size={20} color={COLORS.textSecondary} style={styles.searchIcon} />
-          <TextInput
-            style={styles.searchInput}
-            placeholder={selectedLanguage === 'hi' ? '???? ?????...' : 'Search mandis...'}
-            placeholderTextColor={COLORS.textSecondary}
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-          />
-        </View>
+      {/* Search */}
+      <View style={s.searchBox}>
+        <Search size={16} color={C.muted} />
+        <TextInput style={s.searchInput} placeholder={hi ? 'मंडी खोजें...' : 'Search mandis...'} placeholderTextColor="#555" value={search} onChangeText={setSearch} />
+      </View>
 
-        <View style={styles.sortContainer}>
-          <TouchableOpacity style={[styles.sortButton, sortBy === 'price' && styles.sortButtonActive]} onPress={() => setSortBy('price')}>
-            <TrendingUp size={16} color={sortBy === 'price' ? COLORS.background : COLORS.text} />
-            <Text style={[styles.sortButtonText, sortBy === 'price' && styles.sortButtonTextActive]}>
-              {selectedLanguage === 'hi' ? '????????? ?????' : 'Best Price'}
-            </Text>
+      {/* State Filters */}
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.filterRow} contentContainerStyle={{ paddingHorizontal: 20 }}>
+        <TouchableOpacity style={[s.chip, !selectedState && s.chipActive]} onPress={() => setSelectedState(null)}>
+          <Text style={[s.chipText, !selectedState && s.chipTextActive]}>{hi ? 'सभी' : 'All'}</Text>
+        </TouchableOpacity>
+        {states.slice(0, 10).map((st) => (
+          <TouchableOpacity key={st} style={[s.chip, selectedState === st && s.chipActive]} onPress={() => setSelectedState(st === selectedState ? null : st)}>
+            <Text style={[s.chipText, selectedState === st && s.chipTextActive]}>{st}</Text>
           </TouchableOpacity>
+        ))}
+      </ScrollView>
 
-          <TouchableOpacity style={[styles.sortButton, sortBy === 'distance' && styles.sortButtonActive]} onPress={() => setSortBy('distance')}>
-            <Navigation size={16} color={sortBy === 'distance' ? COLORS.background : COLORS.text} />
-            <Text style={[styles.sortButtonText, sortBy === 'distance' && styles.sortButtonTextActive]}>
-              {selectedLanguage === 'hi' ? '???????' : 'Nearest'}
-            </Text>
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>
-            {selectedLanguage === 'hi' ? `${filteredMandis.length} ???? ????` : `${filteredMandis.length} Mandis found`}
-          </Text>
-
-          {loading ? (
-            <View style={styles.stateContainer}>
-              <ActivityIndicator size="large" color={COLORS.primary} />
-              <Text style={styles.stateText}>{selectedLanguage === 'hi' ? '???? ??? ?? ??? ??...' : 'Loading mandi data...'}</Text>
-            </View>
-          ) : error ? (
-            <View style={styles.errorContainer}>
-              <AlertCircle size={20} color={COLORS.error} />
-              <Text style={styles.errorText}>{error}</Text>
-            </View>
-          ) : (
-            filteredMandis.map((mandi, index) => {
-              const isBestPrice = sortBy === 'price' && index === 0 && mandi.price !== null;
-              const transportCost = mandi.distance !== null ? Math.round(mandi.distance * 2) : null;
-              const netPrice = mandi.price !== null && transportCost !== null ? mandi.price - transportCost : null;
-
-              return (
-                <TouchableOpacity key={mandi.id} style={[styles.mandiCard, isBestPrice && styles.mandiCardBest]}>
-                  {isBestPrice && (
-                    <View style={styles.bestBadge}>
-                      <Text style={styles.bestBadgeText}>{selectedLanguage === 'hi' ? '????????? ?????' : 'Best Price'}</Text>
+      {/* List */}
+      <ScrollView showsVerticalScrollIndicator={false} style={s.list} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => load(true)} tintColor={C.green} />}>
+        {loading ? (
+          <ActivityIndicator size="small" color={C.green} style={{ marginTop: 40 }} />
+        ) : filtered.length === 0 ? (
+          <Text style={s.empty}>{hi ? 'कोई मंडी नहीं मिली' : 'No mandis found'}</Text>
+        ) : (
+          filtered.map((m) => {
+            const p = prices.get(m.id);
+            return (
+              <View key={m.id} style={s.card}>
+                <View style={s.cardTop}>
+                  <View style={s.iconBox}><MapPin size={16} color={C.green} /></View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={s.cardName}>{m.name}</Text>
+                    <Text style={s.cardLoc}>{m.district}, {m.state}</Text>
+                  </View>
+                  <ChevronRight size={16} color={C.muted} />
+                </View>
+                {p && (
+                  <View style={s.cardBottom}>
+                    <View>
+                      <Text style={s.priceLabel}>{hi ? 'भाव' : 'Price'}</Text>
+                      <Text style={s.priceVal}>₹{p.modal_price || '--'}</Text>
                     </View>
-                  )}
-
-                  <View style={styles.mandiHeader}>
-                    <View style={styles.mandiIcon}>
-                      <MapPin size={20} color={COLORS.primary} />
-                    </View>
-                    <View style={styles.mandiInfo}>
-                      <Text style={styles.mandiName}>{mandi.name}</Text>
-                      <Text style={styles.mandiLocation}>{mandi.district}, {mandi.state}</Text>
+                    <View>
+                      <Text style={s.priceLabel}>{hi ? 'आवक' : 'Arrival'}</Text>
+                      <Text style={s.priceVal}>{p.arrival_qty || '--'} T</Text>
                     </View>
                   </View>
-
-                  <View style={styles.priceGrid}>
-                    <View style={styles.priceItem}>
-                      <Text style={styles.priceLabel}>{selectedLanguage === 'hi' ? '?????' : 'Price'}</Text>
-                      <Text style={styles.priceValue}>{mandi.price !== null ? `?${mandi.price}` : '--'}</Text>
-                    </View>
-
-                    <View style={styles.priceItem}>
-                      <Text style={styles.priceLabel}>{selectedLanguage === 'hi' ? '????' : 'Distance'}</Text>
-                      <Text style={styles.priceValue}>{mandi.distance !== null ? `${mandi.distance} km` : '--'}</Text>
-                      <Text style={styles.priceSubtext}>
-                        {transportCost !== null
-                          ? `${selectedLanguage === 'hi' ? '?' : '?'}${transportCost} ${selectedLanguage === 'hi' ? '??????' : 'transport'}`
-                          : '--'}
-                      </Text>
-                    </View>
-
-                    <View style={styles.priceItem}>
-                      <Text style={styles.priceLabel}>{selectedLanguage === 'hi' ? '????? ????' : 'Net'}</Text>
-                      <Text style={[styles.priceValue, styles.netPriceValue]}>{netPrice !== null ? `?${netPrice}` : '--'}</Text>
-                      <Text style={styles.priceSubtext}>{selectedLanguage === 'hi' ? '?????? ?? ???' : 'after transport'}</Text>
-                    </View>
-                  </View>
-
-                  <View style={styles.arrivalContainer}>
-                    <View style={styles.arrivalInfo}>
-                      <Text style={styles.arrivalLabel}>{selectedLanguage === 'hi' ? '?? ?? ???:' : "Today's arrival:"}</Text>
-                      <Text style={styles.arrivalValue}>{mandi.arrival !== null ? `${mandi.arrival.toLocaleString()} Q` : '--'}</Text>
-                    </View>
-                    <View style={styles.arrivalBar}>
-                      <View
-                        style={[
-                          styles.arrivalFill,
-                          { width: `${mandi.arrival !== null ? Math.min((mandi.arrival / 5000) * 100, 100) : 0}%` },
-                        ]}
-                      />
-                    </View>
-                  </View>
-                </TouchableOpacity>
-              );
-            })
-          )}
-        </View>
+                )}
+              </View>
+            );
+          })
+        )}
+        <View style={{ height: 90 }} />
       </ScrollView>
     </SafeAreaView>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: COLORS.background,
-  },
-  scrollView: {
-    flex: 1,
-    padding: 16,
-  },
-  header: {
-    marginBottom: 20,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: COLORS.text,
-    marginBottom: 4,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: COLORS.textSecondary,
-  },
-  searchContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: COLORS.card,
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-  },
-  searchIcon: {
-    marginRight: 12,
-  },
-  searchInput: {
-    flex: 1,
-    paddingVertical: 14,
-    fontSize: 16,
-    color: COLORS.text,
-  },
-  sortContainer: {
-    flexDirection: 'row',
-    gap: 8,
-    marginBottom: 20,
-  },
-  sortButton: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    backgroundColor: COLORS.card,
-    borderRadius: 10,
-    paddingVertical: 12,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-  },
-  sortButtonActive: {
-    backgroundColor: COLORS.primary,
-    borderColor: COLORS.primary,
-  },
-  sortButtonText: {
-    fontSize: 14,
-    color: COLORS.text,
-    fontWeight: '500',
-  },
-  sortButtonTextActive: {
-    color: COLORS.background,
-  },
-  section: {
-    marginBottom: 24,
-  },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: COLORS.text,
-    marginBottom: 12,
-  },
-  mandiCard: {
-    backgroundColor: COLORS.card,
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-  },
-  mandiCardBest: {
-    borderColor: COLORS.primary,
-    borderWidth: 2,
-  },
-  bestBadge: {
-    position: 'absolute',
-    top: -1,
-    right: 16,
-    backgroundColor: COLORS.primary,
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  bestBadgeText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: COLORS.background,
-  },
-  mandiHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  mandiIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: `${COLORS.primary}20`,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12,
-  },
-  mandiInfo: {
-    flex: 1,
-  },
-  mandiName: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: COLORS.text,
-    marginBottom: 2,
-  },
-  mandiLocation: {
-    fontSize: 14,
-    color: COLORS.textSecondary,
-  },
-  priceGrid: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 16,
-  },
-  priceItem: {
-    flex: 1,
-    alignItems: 'center',
-  },
-  priceLabel: {
-    fontSize: 12,
-    color: COLORS.textSecondary,
-    marginBottom: 4,
-  },
-  priceValue: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: COLORS.text,
-    marginBottom: 4,
-  },
-  netPriceValue: {
-    color: COLORS.primary,
-  },
-  priceSubtext: {
-    fontSize: 11,
-    color: COLORS.textSecondary,
-  },
-  arrivalContainer: {
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: COLORS.border,
-  },
-  arrivalInfo: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 8,
-  },
-  arrivalLabel: {
-    fontSize: 12,
-    color: COLORS.textSecondary,
-  },
-  arrivalValue: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: COLORS.text,
-  },
-  arrivalBar: {
-    height: 4,
-    backgroundColor: `${COLORS.primary}30`,
-    borderRadius: 2,
-    overflow: 'hidden',
-  },
-  arrivalFill: {
-    height: '100%',
-    backgroundColor: COLORS.primary,
-  },
-  stateContainer: {
-    alignItems: 'center',
-    gap: 8,
-    paddingVertical: 24,
-  },
-  stateText: {
-    color: COLORS.textSecondary,
-  },
-  errorContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    backgroundColor: `${COLORS.error}1A`,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: `${COLORS.error}55`,
-    padding: 12,
-  },
-  errorText: {
-    color: COLORS.error,
-    flex: 1,
-  },
-});
+const s = StyleSheet.create({
+  container: { flex: 1, backgroundColor: C.bg },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', paddingHorizontal: 20, paddingTop: 16, paddingBottom: 8 },
+  headerTitle: { fontSize: 26, fontWeight: '700', color: C.white },
+  headerCount: { fontSize: 14, color: C.muted },
 
+  searchBox: { flexDirection: 'row', alignItems: 'center', marginHorizontal: 20, marginBottom: 12, backgroundColor: C.card, borderRadius: 10, paddingHorizontal: 14, gap: 10, borderWidth: 0.5, borderColor: C.border },
+  searchInput: { flex: 1, color: C.white, fontSize: 15, paddingVertical: 12 },
+
+  filterRow: { maxHeight: 40, marginBottom: 12 },
+  chip: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, backgroundColor: C.card, marginRight: 6, borderWidth: 0.5, borderColor: C.border },
+  chipActive: { backgroundColor: C.green },
+  chipText: { color: C.muted, fontSize: 13, fontWeight: '500' },
+  chipTextActive: { color: C.bg, fontWeight: '600' },
+
+  list: { flex: 1, paddingHorizontal: 20 },
+  empty: { color: C.muted, textAlign: 'center', marginTop: 40, fontSize: 14 },
+
+  card: { backgroundColor: C.card, borderRadius: 12, padding: 16, marginBottom: 8, borderWidth: 0.5, borderColor: C.border },
+  cardTop: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  iconBox: { width: 36, height: 36, borderRadius: 10, backgroundColor: 'rgba(52,199,89,0.12)', alignItems: 'center', justifyContent: 'center' },
+  cardName: { fontSize: 15, fontWeight: '600', color: C.white },
+  cardLoc: { fontSize: 13, color: C.muted, marginTop: 1 },
+  cardBottom: { flexDirection: 'row', gap: 32, marginTop: 12, paddingTop: 12, borderTopWidth: 0.5, borderTopColor: C.border },
+  priceLabel: { fontSize: 12, color: C.muted, marginBottom: 2 },
+  priceVal: { fontSize: 16, fontWeight: '700', color: C.white },
+});

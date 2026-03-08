@@ -76,7 +76,7 @@ export function useOptimalMandi() {
   return useMutation({
     mutationFn: ({ lat, lon, commodityId }: { lat: number; lon: number; commodityId: number }) =>
       mandiApi.getBestPrice(lat, lon, commodityId),
-    onSuccess: (data) => {
+    onSuccess: () => {
       // Invalidate related queries
       queryClient.invalidateQueries({ queryKey: ["mandis", "nearby"] })
     },

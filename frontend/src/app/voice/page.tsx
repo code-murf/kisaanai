@@ -3,13 +3,11 @@
 import { useState, useEffect, useRef, useCallback } from "react"
 import { Mic, Volume2, Send, X, ChevronLeft } from "lucide-react"
 import dynamic from "next/dynamic"
-import { Orbitron } from "next/font/google"
 import { motion, AnimatePresence } from "framer-motion"
 
 const Siriwave = dynamic(() => import("react-siriwave"), { ssr: false })
-const orbitron = Orbitron({ subsets: ["latin"], weight: ["400", "500", "700"] })
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
+const API_BASE = ""
 
 
 
@@ -394,7 +392,7 @@ export default function VoicePage() {
             </div>
             
             {/* Status & Transcript Text */}
-            <div className={`mt-4 text-center px-6 max-w-xl flex flex-col items-center min-h-[120px] w-full ${orbitron.className}`}>
+            <div className="mt-4 text-center px-6 max-w-xl flex flex-col items-center min-h-[120px] w-full font-mono">
                 <p 
                   className="text-[20px] font-light transition-all duration-300 h-16 w-full flex items-center justify-center mb-2" 
                   style={{ color: '#1CC0D1' }}

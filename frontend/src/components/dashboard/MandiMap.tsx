@@ -1,8 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import type { Map as LeafletMap } from "leaflet"
-import "leaflet/dist/leaflet.css" 
+import "leaflet/dist/leaflet.css"
 import { MapContainer, Marker, Popup, TileLayer, Circle, useMap } from "react-leaflet"
 import { useLocation } from "@/contexts/LocationContext"
 import { Button } from "@/components/ui/button"
@@ -10,32 +9,14 @@ import { Locate } from "lucide-react"
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 
-const mandis = [
-  { 
-    id: 1, 
-    name: "Azadpur Mandi", 
-    lat: 28.7131, 
-    lng: 77.1678, 
-    price: 1240,
-    image: "https://images.unsplash.com/photo-1605335198952-49141f4eb41f?q=80&w=800&auto=format&fit=crop" // Indian Market
-  },
-  { 
-    id: 2, 
-    name: "Okhla Mandi", 
-    lat: 28.5398, 
-    lng: 77.2721, 
-    price: 1210,
-    image: "https://images.unsplash.com/photo-1542838132-92c53300491e?q=80&w=800&auto=format&fit=crop" // Vegetables
-  },
-  { 
-    id: 3, 
-    name: "Ghazipur Mandi", 
-    lat: 28.6289, 
-    lng: 77.3328, 
-    price: 1260,
-    image: "https://images.unsplash.com/photo-1573485868686-25442d00160d?q=80&w=800&auto=format&fit=crop" // Market Stall
-  },
-]
+interface ApiMandi {
+  id: number
+  name: string
+  district: string
+  state: string
+  latitude: number
+  longitude: number
+}
 
 // Component to handle map centering
 function MapUpdater({ center }: { center: [number, number] }) {
@@ -49,6 +30,7 @@ function MapUpdater({ center }: { center: [number, number] }) {
 export default function MandiMap() {
   const [isMounted, setIsMounted] = useState(false)
   const [icons, setIcons] = useState<any>(null)
+  const [apiMandis, setApiMandis] = useState<ApiMandi[]>([])
   const { location, requestLocation, isLoading: isLocating, error: locError } = useLocation()
 
   useEffect(() => {
@@ -73,12 +55,31 @@ export default function MandiMap() {
             popupAnchor: [1, -34],
             shadowSize: [41, 41]
         })
-        
+
         setIcons({ mandi: mandiIcon, user: userIcon })
     })
 
     // Auto-request location on mount
     requestLocation()
+  }, [requestLocation])
+
+  // Fetch mandis from API
+  useEffect(() => {
+    async function fetchMandis() {
+      try {
+        const res = await fetch(`/api/v1/mandis?page_size=50`)
+        if (res.ok) {
+          const data = await res.json()
+          const items: ApiMandi[] = (data.items || []).filter(
+            (m: ApiMandi) => m.latitude && m.longitude
+          )
+          setApiMandis(items)
+        }
+      } catch {
+        // Keep empty — fallback to no markers
+      }
+    }
+    fetchMandis()
   }, [])
 
   if (!isMounted || !icons) {
@@ -89,8 +90,8 @@ export default function MandiMap() {
     )
   }
 
-  const center: [number, number] = location 
-    ? [location.lat, location.lon] 
+  const center: [number, number] = location
+    ? [location.lat, location.lon]
     : [28.6139, 77.209] // Default to Delhi
 
   return (
@@ -99,11 +100,14 @@ export default function MandiMap() {
         <div>
             <CardTitle className="text-xl">Nearby Mandis</CardTitle>
             <p className="text-sm text-muted-foreground">Live market prices and locations</p>
+            {locError && (
+              <p className="text-xs text-red-600 mt-1">{locError}</p>
+            )}
         </div>
-        <Button 
-            variant="default" 
-            size="sm" 
-            onClick={() => requestLocation()} 
+        <Button
+            variant="default"
+            size="sm"
+            onClick={() => requestLocation()}
             disabled={isLocating}
             className="shadow-sm"
         >
@@ -123,7 +127,7 @@ export default function MandiMap() {
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             />
-            
+
             <MapUpdater center={center} />
 
             {/* User Location */}
@@ -134,29 +138,23 @@ export default function MandiMap() {
                             <div className="font-bold p-1">Your Location</div>
                         </Popup>
                     </Marker>
-                    <Circle 
-                        center={[location.lat, location.lon]} 
-                        pathOptions={{ fillColor: '#3b82f6', fillOpacity: 0.1, color: '#3b82f6' }} 
-                        radius={2000} 
+                    <Circle
+                        center={[location.lat, location.lon]}
+                        pathOptions={{ fillColor: '#3b82f6', fillOpacity: 0.1, color: '#3b82f6' }}
+                        radius={2000}
                     />
                 </>
             )}
 
-            {/* Mandis */}
-            {mandis.map((mandi) => (
-              <Marker key={mandi.id} position={[mandi.lat, mandi.lng]} icon={icons.mandi}>
+            {/* API Mandis */}
+            {apiMandis.map((mandi) => (
+              <Marker key={mandi.id} position={[mandi.latitude, mandi.longitude]} icon={icons.mandi}>
                 <Popup className="mandi-popup">
                   <div className="w-[200px] flex flex-col gap-2">
-                    <img 
-                        src={mandi.image} 
-                        alt={mandi.name}
-                        className="w-full h-[120px] object-cover rounded-md shadow-sm"
-                        style={{ display: "block" }}
-                    />
                     <div>
                         <h3 className="font-bold text-lg leading-none">{mandi.name}</h3>
-                        <p className="text-sm text-green-600 font-medium mt-1">
-                            Price: ₹{mandi.price}/qt
+                        <p className="text-xs text-muted-foreground mt-1">
+                            {mandi.district}, {mandi.state}
                         </p>
                     </div>
                   </div>

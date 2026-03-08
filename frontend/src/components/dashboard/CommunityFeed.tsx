@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Play, Pause, Mic, MapPin, ThumbsUp, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useLocation } from "@/contexts/LocationContext";
 
 type AudioNote = {
   id: string;
@@ -17,7 +18,7 @@ type AudioNote = {
   tags: string[];
 };
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+const API_BASE = "";
 
 function resolveAudioUrl(audioUrl: string) {
   if (!audioUrl) return audioUrl;
@@ -31,11 +32,14 @@ export function CommunityFeed() {
   const [error, setError] = useState<string | null>(null);
   const [playingId, setPlayingId] = useState<string | null>(null);
   const [audioRef, setAudioRef] = useState<HTMLAudioElement | null>(null);
+  const { location } = useLocation();
 
   useEffect(() => {
     const fetchNotes = async () => {
+      const lat = location?.lat ?? 28.61;
+      const lng = location?.lon ?? 77.23;
       try {
-        const response = await fetch(`${API_BASE}/api/v1/community/notes?lat=28.61&lng=77.23&radius=50`, {
+        const response = await fetch(`${API_BASE}/api/v1/community/notes?lat=${lat}&lng=${lng}&radius=50`, {
           cache: "no-store",
         });
 
@@ -55,7 +59,7 @@ export function CommunityFeed() {
     };
 
     fetchNotes();
-  }, []);
+  }, [location]);
 
   const togglePlay = (note: AudioNote) => {
     const audioUrl = resolveAudioUrl(note.audio_url);

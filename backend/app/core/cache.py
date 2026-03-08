@@ -59,6 +59,7 @@ class RedisClient:
         self.decode_responses = decode_responses
         self._pool: Optional[ConnectionPool] = None
         self._client: Optional[redis.Redis] = None
+        self.is_connected: bool = False
     
     async def connect(self) -> None:
         """Establish connection to Redis."""
@@ -67,9 +68,19 @@ class RedisClient:
                 self.url,
                 max_connections=self.max_connections,
                 decode_responses=self.decode_responses,
+                socket_timeout=1.0,
+                socket_connect_timeout=1.0,
             )
             self._client = redis.Redis(connection_pool=self._pool)
-            logger.info("Connected to Redis")
+            try:
+                await self._client.ping()
+                self.is_connected = True
+                logger.info("Connected to Redis")
+            except Exception as e:
+                logger.warning(f"Failed to connect to Redis ({e}). Running without Redis cache.")
+                self.is_connected = False
+                self._client = None
+                self._pool = None
     
     async def disconnect(self) -> None:
         """Close Redis connection."""
@@ -79,25 +90,20 @@ class RedisClient:
         if self._pool:
             await self._pool.disconnect()
             self._pool = None
-            logger.info("Disconnected from Redis")
+        self.is_connected = False
+        logger.info("Disconnected from Redis")
     
     @property
     def client(self) -> redis.Redis:
         """Get Redis client instance."""
         if self._client is None:
-            raise RuntimeError("Redis client not connected. Call connect() first.")
+            raise RuntimeError("Redis client not connected or unavailable.")
         return self._client
     
     async def get(self, key: str) -> Optional[bytes]:
-        """
-        Get value from Redis.
-        
-        Args:
-            key: Cache key
-        
-        Returns:
-            Cached value or None
-        """
+        """Get value from Redis."""
+        if not self.is_connected:
+            return None
         try:
             return await self.client.get(key)
         except RedisError as e:
@@ -110,17 +116,9 @@ class RedisClient:
         value: Union[bytes, str],
         ttl: Optional[int] = None,
     ) -> bool:
-        """
-        Set value in Redis.
-        
-        Args:
-            key: Cache key
-            value: Value to cache
-            ttl: Time-to-live in seconds
-        
-        Returns:
-            True if successful
-        """
+        """Set value in Redis."""
+        if not self.is_connected:
+            return False
         try:
             if ttl:
                 await self.client.setex(key, ttl, value)
@@ -132,15 +130,9 @@ class RedisClient:
             return False
     
     async def delete(self, key: str) -> bool:
-        """
-        Delete key from Redis.
-        
-        Args:
-            key: Cache key
-        
-        Returns:
-            True if key was deleted
-        """
+        """Delete key from Redis."""
+        if not self.is_connected:
+            return False
         try:
             result = await self.client.delete(key)
             return result > 0
@@ -149,15 +141,9 @@ class RedisClient:
             return False
     
     async def exists(self, key: str) -> bool:
-        """
-        Check if key exists in Redis.
-        
-        Args:
-            key: Cache key
-        
-        Returns:
-            True if key exists
-        """
+        """Check if key exists in Redis."""
+        if not self.is_connected:
+            return False
         try:
             return await self.client.exists(key) > 0
         except RedisError as e:
@@ -165,16 +151,9 @@ class RedisClient:
             return False
     
     async def expire(self, key: str, ttl: int) -> bool:
-        """
-        Set TTL on a key.
-        
-        Args:
-            key: Cache key
-            ttl: Time-to-live in seconds
-        
-        Returns:
-            True if successful
-        """
+        """Set TTL on a key."""
+        if not self.is_connected:
+            return False
         try:
             return await self.client.expire(key, ttl)
         except RedisError as e:
@@ -182,15 +161,9 @@ class RedisClient:
             return False
     
     async def ttl(self, key: str) -> int:
-        """
-        Get TTL of a key.
-        
-        Args:
-            key: Cache key
-        
-        Returns:
-            TTL in seconds, -1 if no TTL, -2 if key doesn't exist
-        """
+        """Get TTL of a key."""
+        if not self.is_connected:
+            return -2
         try:
             return await self.client.ttl(key)
         except RedisError as e:
@@ -198,15 +171,9 @@ class RedisClient:
             return -2
     
     async def incr(self, key: str) -> int:
-        """
-        Increment a counter.
-        
-        Args:
-            key: Counter key
-        
-        Returns:
-            New value
-        """
+        """Increment a counter."""
+        if not self.is_connected:
+            return 0
         try:
             return await self.client.incr(key)
         except RedisError as e:
@@ -214,16 +181,9 @@ class RedisClient:
             return 0
     
     async def incrby(self, key: str, amount: int) -> int:
-        """
-        Increment counter by amount.
-        
-        Args:
-            key: Counter key
-            amount: Amount to increment
-        
-        Returns:
-            New value
-        """
+        """Increment counter by amount."""
+        if not self.is_connected:
+            return 0
         try:
             return await self.client.incrby(key, amount)
         except RedisError as e:
@@ -231,15 +191,9 @@ class RedisClient:
             return 0
     
     async def keys(self, pattern: str) -> List[str]:
-        """
-        Get keys matching pattern.
-        
-        Args:
-            pattern: Key pattern
-        
-        Returns:
-            List of matching keys
-        """
+        """Get keys matching pattern."""
+        if not self.is_connected:
+            return []
         try:
             return await self.client.keys(pattern)
         except RedisError as e:
@@ -247,12 +201,9 @@ class RedisClient:
             return []
     
     async def flush_db(self) -> bool:
-        """
-        Clear all keys in current database.
-        
-        Returns:
-            True if successful
-        """
+        """Clear all keys in current database."""
+        if not self.is_connected:
+            return False
         try:
             await self.client.flushdb()
             return True
@@ -263,6 +214,8 @@ class RedisClient:
     # Hash operations
     async def hget(self, name: str, key: str) -> Optional[bytes]:
         """Get hash field value."""
+        if not self.is_connected:
+            return None
         try:
             return await self.client.hget(name, key)
         except RedisError as e:
@@ -276,6 +229,8 @@ class RedisClient:
         value: Union[bytes, str],
     ) -> bool:
         """Set hash field value."""
+        if not self.is_connected:
+            return False
         try:
             await self.client.hset(name, key, value)
             return True
@@ -285,6 +240,8 @@ class RedisClient:
     
     async def hgetall(self, name: str) -> Dict[bytes, bytes]:
         """Get all hash fields."""
+        if not self.is_connected:
+            return {}
         try:
             return await self.client.hgetall(name)
         except RedisError as e:
@@ -293,6 +250,8 @@ class RedisClient:
     
     async def hdel(self, name: str, key: str) -> bool:
         """Delete hash field."""
+        if not self.is_connected:
+            return False
         try:
             return await self.client.hdel(name, key) > 0
         except RedisError as e:

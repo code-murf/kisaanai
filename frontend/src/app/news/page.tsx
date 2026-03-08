@@ -1,10 +1,12 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { Bell, Loader2, AlertCircle, TrendingUp, Newspaper, CloudRain, FileText } from "lucide-react";
+import { Bell, AlertCircle, TrendingUp, Newspaper, CloudRain, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { BentoGrid, BentoCard } from "@/components/magicui/bento-grid";
+import { useTranslation } from "@/hooks/useTranslation";
 
 interface NewsItem {
   id: number;
@@ -22,12 +24,13 @@ export default function NewsPage() {
   const [news, setNews] = useState<NewsItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { t } = useTranslation();
 
   useEffect(() => {
     const fetchNews = async () => {
       try {
         const response = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/api/v1/news`,
+          `/api/v1/news`,
           { cache: "no-store" }
         );
 
@@ -77,9 +80,9 @@ export default function NewsPage() {
       >
         <div className="flex flex-col md:flex-row items-center justify-between gap-6 border-b border-neutral-800 pb-8 px-4 md:px-0">
           <div className="space-y-2 text-center md:text-left">
-            <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight text-neutral-50">Newsroom</h1>
+            <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight text-neutral-50">{t("news.title")}</h1>
             <p className="text-lg text-neutral-400 max-w-xl">
-              Curated insights, policy updates, and market intelligence.
+              {t("news.subtitle")}
             </p>
           </div>
           <Button
@@ -87,13 +90,16 @@ export default function NewsPage() {
             size="lg"
             className="rounded-full px-8 bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-600/20"
           >
-            <Bell className="mr-2 h-4 w-4" /> Subscribe
+            <Bell className="mr-2 h-4 w-4" /> {t("news.subscribe")}
           </Button>
         </div>
 
         {loading ? (
-          <div className="flex justify-center py-32">
-            <Loader2 className="h-12 w-12 animate-spin text-emerald-600 opacity-50" />
+          <div className="grid grid-cols-3 gap-0 auto-rows-[22rem]">
+            <Skeleton className="col-span-3 lg:col-span-1 h-full rounded-none bg-neutral-900" />
+            <Skeleton className="col-span-3 lg:col-span-2 row-span-2 h-full rounded-none bg-neutral-900" />
+            <Skeleton className="col-span-3 lg:col-span-1 h-full rounded-none bg-neutral-900" />
+            <Skeleton className="col-span-3 lg:col-span-3 h-full rounded-none bg-neutral-900" />
           </div>
         ) : error ? (
           <div className="flex flex-col items-center justify-center py-20 text-red-600 bg-red-900/10 rounded-2xl border border-red-900/30">
@@ -126,7 +132,14 @@ export default function NewsPage() {
                       <img
                         src={item.image_url}
                         alt="Background"
-                        className="h-full w-full object-cover opacity-60 transition-transform duration-500 group-hover:scale-105"
+                        className="h-full w-full object-cover object-center opacity-60 transition-transform duration-500 group-hover:scale-105"
+                        onError={(e) => {
+                          const target = e.currentTarget;
+                          target.style.display = "none";
+                          if (target.parentElement) {
+                            target.parentElement.classList.add("bg-gradient-to-br", "from-neutral-800", "to-neutral-900");
+                          }
+                        }}
                       />
                     )}
                     <div className="absolute inset-0 bg-gradient-to-t from-neutral-950 via-neutral-950/80 to-transparent" />
@@ -135,7 +148,7 @@ export default function NewsPage() {
                 Icon={getIcon(item.category)}
                 description={item.excerpt}
                 href="#"
-                cta="Read Full Story"
+                cta={t("news.readFullStory")}
                 iconClassName="h-8 w-8 text-white opacity-80"
               />
             ))}
@@ -145,4 +158,3 @@ export default function NewsPage() {
     </div>
   );
 }
-

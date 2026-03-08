@@ -1,8 +1,9 @@
 """
-Forecast API endpoints.
+Forecast API endpoints with CloudWatch metrics.
 """
 from datetime import date
 from typing import List, Optional
+import time
 
 from fastapi import APIRouter, Depends, HTTPException, status, Query, Body
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -15,6 +16,7 @@ from app.services.forecast_service import (
     get_forecast_service,
 )
 from app.schemas import ErrorDetail
+from app.services.cloudwatch_service import cloudwatch_service
 
 router = APIRouter(prefix="/forecasts", tags=["Forecasts"])
 
@@ -40,22 +42,51 @@ async def get_forecast(
     
     Returns predicted price, confidence bounds, and optional explanation.
     """
-    forecast_service = await get_forecast_service(db)
+    start_time = time.time()
     
-    forecast = await forecast_service.forecast(
-        commodity_id=commodity_id,
-        mandi_id=mandi_id,
-        horizon_days=horizon_days,
-        include_explanation=include_explanation,
-    )
-    
-    if not forecast:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Insufficient historical data for forecast. Need at least 30 days of price data.",
+    try:
+        forecast_service = await get_forecast_service(db)
+        
+        forecast = await forecast_service.forecast(
+            commodity_id=commodity_id,
+            mandi_id=mandi_id,
+            horizon_days=horizon_days,
+            include_explanation=include_explanation,
         )
-    
-    return forecast
+        
+        if not forecast:
+            await cloudwatch_service.put_metric(
+                'APIErrors', 1,
+                dimensions=[
+                    {'Name': 'ErrorType', 'Value': 'InsufficientData'},
+                    {'Name': 'Endpoint', 'Value': 'forecasts'}
+                ]
+            )
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Insufficient historical data for forecast. Need at least 30 days of price data.",
+            )
+        
+        # Record success metrics
+        latency = (time.time() - start_time) * 1000
+        await cloudwatch_service.put_metrics_batch([
+            {'name': 'ForecastAPIRequests', 'value': 1},
+            {'name': 'ForecastAPILatency', 'value': latency, 'unit': 'Milliseconds'}
+        ])
+        
+        return forecast
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        await cloudwatch_service.put_metric(
+            'APIErrors', 1,
+            dimensions=[
+                {'Name': 'ErrorType', 'Value': type(e).__name__},
+                {'Name': 'Endpoint', 'Value': 'forecasts'}
+            ]
+        )
+        raise
 
 
 @router.get(

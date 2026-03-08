@@ -1,5 +1,5 @@
 import sys
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, AsyncMock
 
 # MOCK asyncpg module BEFORE any other imports to prevent ModuleNotFoundError
 sys.modules["asyncpg"] = MagicMock()
@@ -29,11 +29,13 @@ from fastapi.testclient import TestClient
 # Mock the get_db dependency
 def override_get_db():
     mock_session = MagicMock()
-    # Mock async methods
-    mock_session.execute.return_value.scalars.return_value.all.return_value = []
-    mock_session.execute.return_value.scalar_one_or_none.return_value = None
-    mock_session.commit.return_value = None
-    mock_session.close.return_value = None
+    # Mock async SQLAlchemy-style methods
+    execute_result = MagicMock()
+    execute_result.scalars.return_value.all.return_value = []
+    execute_result.scalar_one_or_none.return_value = None
+    mock_session.execute = AsyncMock(return_value=execute_result)
+    mock_session.commit = AsyncMock(return_value=None)
+    mock_session.close = AsyncMock(return_value=None)
     # Context manager protocol
     mock_session.__enter__.return_value = mock_session
     mock_session.__exit__.return_value = None

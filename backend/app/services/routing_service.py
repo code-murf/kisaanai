@@ -144,13 +144,21 @@ class RoutingService:
         - Distance and transport costs
         - User's optimization goal
         """
-        # Get nearby mandis
-        nearby_mandis = await self.mandi_service.get_nearby(
-            latitude=request.latitude,
-            longitude=request.longitude,
-            radius_km=request.max_distance_km,
-            limit=50,  # Get more for analysis
-        )
+        # Get nearby mandis (try PostGIS first, fallback to Python)
+        try:
+            nearby_mandis = await self.mandi_service.get_nearby(
+                latitude=request.latitude,
+                longitude=request.longitude,
+                radius_km=request.max_distance_km,
+                limit=50,
+            )
+        except Exception:
+            nearby_mandis = await self.mandi_service.get_nearby_python(
+                latitude=request.latitude,
+                longitude=request.longitude,
+                radius_km=request.max_distance_km,
+                limit=50,
+            )
         
         if not nearby_mandis:
             return RoutingResponse(
@@ -248,7 +256,7 @@ class RoutingService:
         if not current_price or not current_price.modal_price:
             return None
         
-        modal_price = current_price.modal_price
+        modal_price = float(current_price.modal_price)
         
         # Get forecast if requested
         forecasted_price = None
@@ -489,7 +497,11 @@ async def get_routing_service(db: AsyncSession) -> RoutingService:
     
     mandi_service = MandiService(db)
     price_service = PriceService(db)
-    forecast_service = await ForecastService.create(db)
+    forecast_service = ForecastService(db=db)
+    try:
+        await forecast_service.load_models()
+    except Exception as e:
+        print(f"Warning: Could not load forecast models for routing: {e}")
     
     return RoutingService(
         db=db,
@@ -497,3 +509,4 @@ async def get_routing_service(db: AsyncSession) -> RoutingService:
         price_service=price_service,
         forecast_service=forecast_service,
     )
+

@@ -1,6 +1,6 @@
 "use client"
 
-import React, { createContext, useContext, useState, useEffect } from "react"
+import React, { createContext, useContext, useState, useEffect, useCallback } from "react"
 
 type Language = "en" | "hi" | "pa" | "ta" | "te" | "mr" | "bn" | "gu"
 
@@ -22,6 +22,7 @@ interface SettingsContextType {
   updateSettings: (updates: Partial<AppSettings>) => void
   updateNotificationSetting: (key: keyof AppSettings["notifications"], value: boolean) => void
   resetSettings: () => void
+  isLoaded: boolean
 }
 
 const defaultSettings: AppSettings = {
@@ -41,6 +42,7 @@ const SettingsContext = createContext<SettingsContextType | undefined>(undefined
 
 export function SettingsProvider({ children }: { children: React.ReactNode }) {
   const [settings, setSettings] = useState<AppSettings>(defaultSettings)
+  const [isLoaded, setIsLoaded] = useState(false)
 
   useEffect(() => {
     // Load settings from localStorage
@@ -48,15 +50,16 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     if (storedSettings) {
       try {
         const parsed = JSON.parse(storedSettings)
-        setSettings({ ...defaultSettings, ...parsed })
+        setSettings({ ...defaultSettings, ...parsed, notifications: { ...defaultSettings.notifications, ...parsed.notifications } })
       } catch (e) {
         console.error("Failed to parse stored settings:", e)
       }
     }
+    setIsLoaded(true)
   }, [])
 
+  // Apply dark mode to document
   useEffect(() => {
-    // Apply dark mode to document
     if (typeof document !== "undefined") {
       if (settings.darkMode) {
         document.documentElement.classList.add("dark")
@@ -66,37 +69,49 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     }
   }, [settings.darkMode])
 
-  const updateSettings = (updates: Partial<AppSettings>) => {
-    const newSettings = { ...settings, ...updates }
-    setSettings(newSettings)
-    localStorage.setItem("app_settings", JSON.stringify(newSettings))
-  }
+  // Apply language to <html lang> attribute
+  useEffect(() => {
+    if (typeof document !== "undefined") {
+      document.documentElement.lang = settings.language === "hi" ? "hi" : "en"
+    }
+  }, [settings.language])
 
-  const updateNotificationSetting = (
+  const updateSettings = useCallback((updates: Partial<AppSettings>) => {
+    setSettings(prev => {
+      const newSettings = { ...prev, ...updates }
+      localStorage.setItem("app_settings", JSON.stringify(newSettings))
+      return newSettings
+    })
+  }, [])
+
+  const updateNotificationSetting = useCallback((
     key: keyof AppSettings["notifications"],
     value: boolean
   ) => {
-    const newSettings = {
-      ...settings,
-      notifications: {
-        ...settings.notifications,
-        [key]: value,
-      },
-    }
-    setSettings(newSettings)
-    localStorage.setItem("app_settings", JSON.stringify(newSettings))
-  }
+    setSettings(prev => {
+      const newSettings = {
+        ...prev,
+        notifications: {
+          ...prev.notifications,
+          [key]: value,
+        },
+      }
+      localStorage.setItem("app_settings", JSON.stringify(newSettings))
+      return newSettings
+    })
+  }, [])
 
-  const resetSettings = () => {
+  const resetSettings = useCallback(() => {
     setSettings(defaultSettings)
     localStorage.removeItem("app_settings")
-  }
+  }, [])
 
   const value: SettingsContextType = {
     settings,
     updateSettings,
     updateNotificationSetting,
     resetSettings,
+    isLoaded,
   }
 
   return <SettingsContext.Provider value={value}>{children}</SettingsContext.Provider>

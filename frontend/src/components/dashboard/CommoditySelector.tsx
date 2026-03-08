@@ -51,9 +51,12 @@ interface CommoditySelectorProps {
   onSelect?: (id: number) => void
 }
 
+import { useTranslation } from "@/hooks/useTranslation"
+
 export function CommoditySelector({ onSelect }: CommoditySelectorProps) {
   const [open, setOpen] = React.useState(false)
   const [value, setValue] = React.useState("potato")
+  const { t } = useTranslation()
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -65,8 +68,8 @@ export function CommoditySelector({ onSelect }: CommoditySelectorProps) {
           className="w-full justify-between"
         >
           {value
-            ? commodities.find((commodity) => commodity.value === value)?.label
-            : "Select commodity..."}
+            ? t("entities." + (commodities.find((commodity) => commodity.value === value)?.label.split(" ")[0] || "Select"))
+            : t("charts.selectCommodity") || "Select commodity..."}
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
@@ -95,7 +98,7 @@ export function CommoditySelector({ onSelect }: CommoditySelectorProps) {
                         value === commodity.value ? "opacity-100" : "opacity-0"
                     )}
                     />
-                    {commodity.label}
+                    {t("entities." + commodity.label.split(" ")[0])}
                 </CommandItem>
               ))}
             </CommandGroup>
@@ -105,3 +108,4 @@ export function CommoditySelector({ onSelect }: CommoditySelectorProps) {
     </Popover>
   )
 }
+

@@ -1,10 +1,11 @@
-﻿"use client"
+"use client"
 
 import { useEffect, useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
 import { Sun, Cloud, CloudRain, Droplets, AlertTriangle, AlertCircle } from "lucide-react"
 import { format } from "date-fns"
+import { useLocation } from "@/contexts/LocationContext"
 
 interface WeatherForecast {
   date: string
@@ -21,12 +22,15 @@ export function WeatherWidget() {
   const [forecasts, setForecasts] = useState<WeatherForecast[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const { location } = useLocation()
 
   useEffect(() => {
     const fetchWeather = async () => {
+      const lat = location?.lat ?? 28.7041
+      const lon = location?.lon ?? 77.1025
       try {
         const res = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/api/v1/weather/forecast?lat=28.7041&lon=77.1025&days=14`
+          `/api/v1/weather/forecast?lat=${lat}&lon=${lon}&days=14`
         )
         if (!res.ok) {
           throw new Error(`Weather API error (${res.status})`)
@@ -43,7 +47,7 @@ export function WeatherWidget() {
     }
 
     fetchWeather()
-  }, [])
+  }, [location])
 
   if (loading) return <div className="h-48 w-full bg-muted animate-pulse rounded-md" />
 
@@ -127,4 +131,3 @@ export function WeatherWidget() {
     </Card>
   )
 }
-

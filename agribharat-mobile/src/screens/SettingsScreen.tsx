@@ -1,324 +1,129 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch } from 'react-native';
+import React, { useState } from 'react';
+import {
+  View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { User, MapPin, Globe, Bell, Shield, ChevronRight, Moon, Sun } from 'lucide-react-native';
-import { COLORS, LANGUAGES } from '../constants';
+import { Globe, Bell, Shield, ChevronRight, Moon, Check } from 'lucide-react-native';
+import { COLORS } from '../constants';
 import { useAppStore } from '../store/useAppStore';
 
+const C = { bg: '#000', card: '#111', border: '#1c1c1e', muted: '#8e8e93', green: '#34c759', white: '#fff' };
+
 export default function SettingsScreen() {
-  const { user, selectedLanguage, setSelectedLanguage, logout } = useAppStore();
-  const [darkMode, setDarkMode] = React.useState(true);
-  const [notifications, setNotifications] = React.useState({
-    priceAlerts: true,
-    weatherAlerts: true,
-    marketUpdates: false,
-    whatsapp: true,
-  });
-
-  const SettingSection = ({ title, icon: Icon, children }: any) => (
-    <View style={styles.section}>
-      <View style={styles.sectionHeader}>
-        <Icon size={20} color={COLORS.primary} />
-        <Text style={styles.sectionTitle}>{title}</Text>
-      </View>
-      <View style={styles.sectionContent}>{children}</View>
-    </View>
-  );
-
-  const SettingItem = ({ label, value, action, onPress, isToggle, toggleValue }: any) => (
-    <TouchableOpacity
-      style={styles.settingItem}
-      onPress={onPress}
-      disabled={!onPress && !isToggle}
-    >
-      <View style={styles.settingLeft}>
-        <Text style={styles.settingLabel}>{label}</Text>
-        {value && <Text style={styles.settingValue}>{value}</Text>}
-      </View>
-      {isToggle ? (
-        <Switch
-          value={toggleValue}
-          onValueChange={onPress}
-          trackColor={{ false: COLORS.border, true: COLORS.primary }}
-          thumbColor={toggleValue ? COLORS.background : COLORS.textSecondary}
-        />
-      ) : (
-        <ChevronRight size={20} color={COLORS.textSecondary} />
-      )}
-    </TouchableOpacity>
-  );
+  const { selectedLanguage, setSelectedLanguage } = useAppStore();
+  const hi = selectedLanguage === 'hi';
+  const [notifs, setNotifs] = useState({ price: true, weather: true, market: false });
 
   return (
-    <SafeAreaView style={styles.container} edges={['bottom']}>
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        {/* Profile Card */}
-        <View style={styles.profileCard}>
-          <View style={styles.avatar}>
-            <Text style={styles.avatarText}>RL</Text>
-          </View>
-          <View style={styles.profileInfo}>
-            <Text style={styles.profileName}>Ram Lal</Text>
-            <Text style={styles.profilePhone}>+91 98765 43210</Text>
-            <Text style={styles.verified}>Verified Farmer</Text>
+    <SafeAreaView style={s.container} edges={['top']}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={s.content}>
+        <Text style={s.title}>{hi ? 'सेटिंग्स' : 'Settings'}</Text>
+
+        {/* Profile */}
+        <View style={s.card}>
+          <View style={s.profileRow}>
+            <View style={s.avatar}><Text style={s.avatarText}>K</Text></View>
+            <View style={{ flex: 1 }}>
+              <Text style={s.profileName}>{hi ? 'किसान' : 'Farmer'}</Text>
+              <Text style={s.profileSub}>{hi ? 'प्रोफ़ाइल सेट करें' : 'Set up your profile'}</Text>
+            </View>
+            <ChevronRight size={16} color={C.muted} />
           </View>
         </View>
 
-        {/* Account Section */}
-        <SettingSection title="Account" icon={User}>
-          <SettingItem label="Phone Number" value="+91 98765 43210" action="Edit" />
-          <SettingItem label="Name" value="Ram Lal" action="Edit" />
-          <SettingItem label="Email" value="ram@example.com" action="Edit" />
-        </SettingSection>
-
-        {/* Location Section */}
-        <SettingSection title="Location" icon={MapPin}>
-          <SettingItem label="State" value="Uttar Pradesh" action="Change" />
-          <SettingItem label="District" value="Meerut" action="Change" />
-          <SettingItem label="Default Mandi" value="Meerut Mandi" action="Change" />
-        </SettingSection>
-
-        {/* Preferences Section */}
-        <SettingSection title="Preferences" icon={Globe}>
-          <View style={styles.languageSelector}>
-            {LANGUAGES.map((lang) => (
-              <TouchableOpacity
-                key={lang.code}
-                style={[
-                  styles.languageButton,
-                  selectedLanguage === lang.code && styles.languageButtonActive,
-                ]}
-                onPress={() => setSelectedLanguage(lang.code as 'hi' | 'en' | 'pa')}
-              >
-                <Text
-                  style={[
-                    styles.languageButtonText,
-                    selectedLanguage === lang.code && styles.languageButtonTextActive,
-                  ]}
-                >
-                  {lang.name}
-                </Text>
+        {/* Language */}
+        <View style={s.card}>
+          <View style={s.cardHead}><Globe size={16} color={C.muted} /><Text style={s.cardTitle}>{hi ? 'भाषा' : 'Language'}</Text></View>
+          <View style={s.langRow}>
+            {[
+              { code: 'hi', name: 'हिन्दी', sub: 'Hindi' },
+              { code: 'en', name: 'English', sub: 'English' },
+            ].map((l) => (
+              <TouchableOpacity key={l.code} style={[s.langCard, selectedLanguage === l.code && s.langCardActive]} onPress={() => setSelectedLanguage(l.code)}>
+                <Text style={s.langName}>{l.name}</Text>
+                <Text style={s.langSub}>{l.sub}</Text>
+                {selectedLanguage === l.code && <Check size={14} color={C.green} style={{ marginTop: 4 }} />}
               </TouchableOpacity>
             ))}
           </View>
-          <SettingItem
-            label="Dark Mode"
-            value={darkMode ? 'Enabled' : 'Disabled'}
-            isToggle
-            toggleValue={darkMode}
-            onPress={() => setDarkMode(!darkMode)}
-          />
-          <SettingItem label="Default Commodity" value="Potato (Jyoti)" action="Change" />
-        </SettingSection>
-
-        {/* Notifications Section */}
-        <SettingSection title="Notifications" icon={Bell}>
-          <SettingItem
-            label="Price Alerts"
-            isToggle
-            toggleValue={notifications.priceAlerts}
-            onPress={() => setNotifications({ ...notifications, priceAlerts: !notifications.priceAlerts })}
-          />
-          <SettingItem
-            label="Weather Alerts"
-            isToggle
-            toggleValue={notifications.weatherAlerts}
-            onPress={() => setNotifications({ ...notifications, weatherAlerts: !notifications.weatherAlerts })}
-          />
-          <SettingItem
-            label="Market Updates"
-            isToggle
-            toggleValue={notifications.marketUpdates}
-            onPress={() => setNotifications({ ...notifications, marketUpdates: !notifications.marketUpdates })}
-          />
-          <SettingItem label="WhatsApp Notifications" value="Enabled" action="Manage" />
-        </SettingSection>
-
-        {/* Security Section */}
-        <SettingSection title="Security" icon={Shield}>
-          <SettingItem label="Change PIN" action="Update" />
-          <SettingItem
-            label="Biometric Login"
-            value="Enabled"
-            isToggle
-            toggleValue={true}
-          />
-          <SettingItem label="Privacy Policy" action="View" />
-          <SettingItem label="Terms of Service" action="View" />
-        </SettingSection>
-
-        {/* App Info */}
-        <View style={styles.appInfo}>
-          <Text style={styles.appName}>KisaanAI Platform</Text>
-          <Text style={styles.appVersion}>Version 1.0.0</Text>
-          <Text style={styles.appTagline}>Made with ❤️ for Indian Farmers</Text>
         </View>
 
-        {/* Logout Button */}
-        <TouchableOpacity style={styles.logoutButton} onPress={logout}>
-          <Text style={styles.logoutText}>Logout</Text>
+        {/* Notifications */}
+        <View style={s.card}>
+          <View style={s.cardHead}><Bell size={16} color={C.muted} /><Text style={s.cardTitle}>{hi ? 'सूचनाएं' : 'Notifications'}</Text></View>
+          {[
+            { k: 'price' as const, l: hi ? 'भाव अलर्ट' : 'Price Alerts' },
+            { k: 'weather' as const, l: hi ? 'मौसम अलर्ट' : 'Weather Alerts' },
+            { k: 'market' as const, l: hi ? 'बाज़ार अपडेट' : 'Market Updates' },
+          ].map((n) => (
+            <View key={n.k} style={s.settingRow}>
+              <Text style={s.settingLabel}>{n.l}</Text>
+              <Switch
+                value={notifs[n.k]}
+                onValueChange={() => setNotifs((p) => ({ ...p, [n.k]: !p[n.k] }))}
+                trackColor={{ false: '#39393d', true: C.green }}
+                thumbColor={C.white}
+              />
+            </View>
+          ))}
+        </View>
+
+        {/* Security */}
+        <View style={s.card}>
+          <View style={s.cardHead}><Shield size={16} color={C.muted} /><Text style={s.cardTitle}>{hi ? 'सुरक्षा' : 'More'}</Text></View>
+          {[hi ? 'गोपनीयता नीति' : 'Privacy Policy', hi ? 'सेवा की शर्तें' : 'Terms of Service', hi ? 'सहायता' : 'Help & Support'].map((l, i) => (
+            <TouchableOpacity key={i} style={s.settingRow}>
+              <Text style={s.settingLabel}>{l}</Text>
+              <ChevronRight size={14} color={C.muted} />
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        {/* App Info */}
+        <View style={s.appInfo}>
+          <Text style={s.appName}>KisaanAI v1.0.0</Text>
+          <Text style={s.appMade}>{hi ? '❤️ भारत में बनाया' : 'Made with ❤️ in India'}</Text>
+        </View>
+
+        {/* Logout */}
+        <TouchableOpacity style={s.logoutBtn}>
+          <Text style={s.logoutText}>{hi ? 'लॉगआउट' : 'Log Out'}</Text>
         </TouchableOpacity>
+
+        <View style={{ height: 90 }} />
       </ScrollView>
     </SafeAreaView>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: COLORS.background,
-  },
-  scrollView: {
-    flex: 1,
-    padding: 16,
-  },
-  profileCard: {
-    flexDirection: 'row',
-    backgroundColor: COLORS.card,
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 24,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: COLORS.border,
-  },
-  avatar: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: COLORS.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 16,
-  },
-  avatarText: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: COLORS.background,
-  },
-  profileInfo: {
-    flex: 1,
-  },
-  profileName: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: COLORS.text,
-    marginBottom: 4,
-  },
-  profilePhone: {
-    fontSize: 14,
-    color: COLORS.textSecondary,
-    marginBottom: 4,
-  },
-  verified: {
-    fontSize: 12,
-    color: COLORS.primary,
-  },
-  section: {
-    backgroundColor: COLORS.card,
-    borderRadius: 16,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    padding: 16,
-    paddingBottom: 8,
-  },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: COLORS.text,
-  },
-  sectionContent: {
-    paddingHorizontal: 16,
-    paddingBottom: 8,
-  },
-  settingItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
-  },
-  settingLeft: {
-    flex: 1,
-  },
-  settingLabel: {
-    fontSize: 14,
-    color: COLORS.text,
-    marginBottom: 2,
-  },
-  settingValue: {
-    fontSize: 12,
-    color: COLORS.textSecondary,
-  },
-  languageSelector: {
-    flexDirection: 'row',
-    gap: 8,
-    paddingVertical: 8,
-    marginBottom: 8,
-  },
-  languageButton: {
-    flex: 1,
-    backgroundColor: COLORS.background,
-    borderRadius: 8,
-    paddingVertical: 10,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: COLORS.border,
-  },
-  languageButtonActive: {
-    backgroundColor: COLORS.primary,
-    borderColor: COLORS.primary,
-  },
-  languageButtonText: {
-    fontSize: 14,
-    color: COLORS.text,
-  },
-  languageButtonTextActive: {
-    color: COLORS.background,
-    fontWeight: '600',
-  },
-  appInfo: {
-    backgroundColor: `${COLORS.primary}10`,
-    borderRadius: 16,
-    padding: 20,
-    alignItems: 'center',
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: `${COLORS.primary}30`,
-  },
-  appName: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: COLORS.text,
-    marginBottom: 4,
-  },
-  appVersion: {
-    fontSize: 14,
-    color: COLORS.textSecondary,
-    marginBottom: 4,
-  },
-  appTagline: {
-    fontSize: 12,
-    color: COLORS.textSecondary,
-  },
-  logoutButton: {
-    backgroundColor: `${COLORS.error}20`,
-    borderRadius: 12,
-    padding: 16,
-    alignItems: 'center',
-    marginBottom: 24,
-    borderWidth: 1,
-    borderColor: COLORS.error,
-  },
-  logoutText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: COLORS.error,
-  },
+const s = StyleSheet.create({
+  container: { flex: 1, backgroundColor: C.bg },
+  content: { padding: 20 },
+  title: { fontSize: 26, fontWeight: '700', color: C.white, marginBottom: 20 },
+
+  card: { backgroundColor: C.card, borderRadius: 12, padding: 16, marginBottom: 12, borderWidth: 0.5, borderColor: C.border },
+  cardHead: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 14 },
+  cardTitle: { fontSize: 15, fontWeight: '600', color: C.white },
+
+  profileRow: { flexDirection: 'row', alignItems: 'center', gap: 14 },
+  avatar: { width: 44, height: 44, borderRadius: 22, backgroundColor: C.green, alignItems: 'center', justifyContent: 'center' },
+  avatarText: { color: C.bg, fontSize: 18, fontWeight: '700' },
+  profileName: { fontSize: 16, fontWeight: '600', color: C.white },
+  profileSub: { fontSize: 13, color: C.muted, marginTop: 1 },
+
+  langRow: { flexDirection: 'row', gap: 10 },
+  langCard: { flex: 1, alignItems: 'center', paddingVertical: 16, borderRadius: 10, borderWidth: 1, borderColor: C.border },
+  langCardActive: { borderColor: C.green, backgroundColor: 'rgba(52,199,89,0.08)' },
+  langName: { fontSize: 16, fontWeight: '600', color: C.white },
+  langSub: { fontSize: 12, color: C.muted, marginTop: 2 },
+
+  settingRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 14, borderBottomWidth: 0.5, borderBottomColor: C.border },
+  settingLabel: { fontSize: 15, color: C.white },
+
+  appInfo: { alignItems: 'center', paddingVertical: 20, gap: 4 },
+  appName: { fontSize: 14, color: C.muted },
+  appMade: { fontSize: 12, color: '#555' },
+
+  logoutBtn: { backgroundColor: '#1c1c1e', borderRadius: 12, paddingVertical: 16, alignItems: 'center', borderWidth: 0.5, borderColor: '#3a3a3c' },
+  logoutText: { color: '#ff3b30', fontSize: 16, fontWeight: '500' },
 });

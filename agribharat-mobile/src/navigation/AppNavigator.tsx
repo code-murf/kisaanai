@@ -1,9 +1,9 @@
 import React from 'react';
-import { View } from 'react-native';
+import { View, StyleSheet, Platform } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { NavigationContainer } from '@react-navigation/native';
-import { Home, Map, Mic, BarChart3, Settings } from 'lucide-react-native';
-import { COLORS } from '../constants';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { Home, MapPin, Mic, BarChart3, Settings } from 'lucide-react-native';
 
 import HomeScreen from '../screens/HomeScreen';
 import MandiScreen from '../screens/MandiScreen';
@@ -11,90 +11,80 @@ import VoiceScreen from '../screens/VoiceScreen';
 import ChartsScreen from '../screens/ChartsScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 
+import DoctorScreen from '../screens/DoctorScreen';
+import NewsScreen from '../screens/NewsScreen';
+import CommunityScreen from '../screens/CommunityScreen';
+
 const Tab = createBottomTabNavigator();
+const Stack = createNativeStackNavigator();
+
+const C = { bg: '#000', card: '#000', border: '#1c1c1e', muted: '#8e8e93', green: '#34c759' };
 
 function TabIcon({ name, focused, color }: { name: string; focused: boolean; color: string }) {
-  const size = focused ? 24 : 20;
-
+  const size = 22;
+  const w = focused ? 2 : 1.5;
   switch (name) {
-    case 'Home':
-      return <Home size={size} color={color} strokeWidth={focused ? 2.5 : 2} />;
-    case 'Mandi':
-      return <Map size={size} color={color} strokeWidth={focused ? 2.5 : 2} />;
-    case 'Voice':
-      return (
-        <View style={{
-          width: focused ? 48 : 40,
-          height: focused ? 48 : 40,
-          borderRadius: focused ? 24 : 20,
-          backgroundColor: COLORS.primary,
-          alignItems: 'center',
-          justifyContent: 'center',
-          marginTop: focused ? -20 : -10,
-        }}>
-          <Mic size={focused ? 24 : 18} color={COLORS.background} strokeWidth={2.5} />
-        </View>
-      );
-    case 'Charts':
-      return <BarChart3 size={size} color={color} strokeWidth={focused ? 2.5 : 2} />;
-    case 'Settings':
-      return <Settings size={size} color={color} strokeWidth={focused ? 2.5 : 2} />;
-    default:
-      return null;
+    case 'Home': return <Home size={size} color={color} strokeWidth={w} />;
+    case 'Mandi': return <MapPin size={size} color={color} strokeWidth={w} />;
+    case 'Voice': return (
+      <View style={[styles.micBtn, focused && styles.micBtnActive]}>
+        <Mic size={20} color="#000" strokeWidth={2.5} />
+      </View>
+    );
+    case 'Charts': return <BarChart3 size={size} color={color} strokeWidth={w} />;
+    case 'News': return <Settings size={size} color={color} strokeWidth={w} />; // using settings icon for now or standard one
+    default: return null;
   }
+}
+
+function TabNavigator() {
+  return (
+    <Tab.Navigator
+      screenOptions={({ route }) => ({
+        headerShown: false,
+        tabBarIcon: ({ focused, color }) => <TabIcon name={route.name} focused={focused} color={color} />,
+        tabBarActiveTintColor: C.green,
+        tabBarInactiveTintColor: C.muted,
+        tabBarStyle: {
+          backgroundColor: C.card,
+          borderTopColor: C.border,
+          borderTopWidth: 0.5,
+          height: Platform.OS === 'ios' ? 84 : 64,
+          paddingBottom: Platform.OS === 'ios' ? 24 : 8,
+          paddingTop: 6,
+          elevation: 0,
+        },
+        tabBarLabelStyle: { fontSize: 10, fontWeight: '500' },
+      })}
+    >
+      <Tab.Screen name="Home" component={HomeScreen} />
+      <Tab.Screen name="Mandi" component={MandiScreen} />
+      <Tab.Screen name="Voice" component={VoiceScreen} options={{ tabBarLabel: '' }} />
+      <Tab.Screen name="Charts" component={ChartsScreen} />
+      <Tab.Screen name="News" component={NewsScreen} />
+    </Tab.Navigator>
+  );
 }
 
 export default function AppNavigator() {
   return (
     <NavigationContainer>
-      <Tab.Navigator
-        screenOptions={({ route }) => ({
-          headerShown: false,
-          tabBarIcon: ({ focused, color }) => (
-            <TabIcon name={route.name} focused={focused} color={color} />
-          ),
-          tabBarActiveTintColor: COLORS.primary,
-          tabBarInactiveTintColor: COLORS.textSecondary,
-          tabBarStyle: {
-            backgroundColor: COLORS.card,
-            borderTopColor: COLORS.border,
-            borderTopWidth: 1,
-            height: 70,
-            paddingBottom: 10,
-            paddingTop: 10,
-          },
-          tabBarLabelStyle: {
-            fontSize: 11,
-            fontWeight: '500',
-          },
-        })}
-      >
-        <Tab.Screen
-          name="Home"
-          component={HomeScreen}
-          options={{ tabBarLabel: 'Home' }}
-        />
-        <Tab.Screen
-          name="Mandi"
-          component={MandiScreen}
-          options={{ tabBarLabel: 'Mandi' }}
-        />
-        <Tab.Screen
-          name="Voice"
-          component={VoiceScreen}
-          options={{ tabBarLabel: 'Voice' }}
-        />
-        <Tab.Screen
-          name="Charts"
-          component={ChartsScreen}
-          options={{ tabBarLabel: 'Charts' }}
-        />
-        <Tab.Screen
-          name="Settings"
-          component={SettingsScreen}
-          options={{ tabBarLabel: 'Settings' }}
-        />
-      </Tab.Navigator>
+      <Stack.Navigator screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="MainTabs" component={TabNavigator} />
+        <Stack.Screen name="Doctor" component={DoctorScreen} />
+        <Stack.Screen name="Community" component={CommunityScreen} />
+        <Stack.Screen name="Settings" component={SettingsScreen} />
+      </Stack.Navigator>
     </NavigationContainer>
   );
 }
+
+const styles = StyleSheet.create({
+  micBtn: {
+    width: 46, height: 46, borderRadius: 23,
+    backgroundColor: '#34c759',
+    alignItems: 'center', justifyContent: 'center',
+    marginTop: -16,
+  },
+  micBtnActive: { backgroundColor: '#30b350' },
+});

@@ -33,7 +33,7 @@ export function ForecastWidget({ commodityId }: ForecastWidgetProps) {
     async function fetchForecast() {
       try {
         setLoading(true)
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/v1/forecasts/${commodityId}/${defaultMandiId}?horizon_days=7`)
+        const res = await fetch(`/api/v1/forecasts/${commodityId}/${defaultMandiId}?horizon_days=7`)
         if (!res.ok) throw new Error("Failed to fetch forecast")
         const json = await res.json()
         setData(json)

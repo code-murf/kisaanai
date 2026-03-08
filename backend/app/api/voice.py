@@ -5,6 +5,7 @@ This module provides endpoints for voice-based interactions with support for:
 - Voice query processing (STT -> LLM -> TTS)
 - Barge-in cancellation for interrupting ongoing requests
 - Session management for tracking active voice requests
+- CloudWatch metrics for monitoring
 """
 from fastapi import APIRouter, UploadFile, File, HTTPException, status, Depends, Form
 from typing import Optional
@@ -13,6 +14,7 @@ import uuid
 import asyncio
 import inspect
 import logging
+import time
 
 from app.services.ai_service import get_ai_service
 from app.core.voice_session import get_session_manager
@@ -22,6 +24,7 @@ from app.api.auth import get_current_user
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 from pydantic import BaseModel
+from app.services.cloudwatch_service import cloudwatch_service
 
 logger = logging.getLogger(__name__)
 
@@ -79,6 +82,7 @@ async def voice_query(
         - language: Response language
         - session_id: Session ID for future requests
     """
+    start_time = time.time()
     ai_service = get_ai_service()
     session_manager = get_session_manager()
     
@@ -155,22 +159,69 @@ async def voice_query(
     try:
         # Wait for the task to complete
         result = await task
+        
+        # Record success metrics
+        latency = (time.time() - start_time) * 1000
+        await cloudwatch_service.put_metrics_batch([
+            {
+                'name': 'VoiceAPIRequests',
+                'value': 1,
+                'dimensions': [
+                    {'Name': 'Language', 'Value': language},
+                    {'Name': 'Success', 'Value': 'True'}
+                ]
+            },
+            {
+                'name': 'VoiceAPILatency',
+                'value': latency,
+                'unit': 'Milliseconds'
+            }
+        ])
+        
         return result
     except asyncio.CancelledError:
+        await cloudwatch_service.put_metric(
+            'VoiceAPIRequests', 1,
+            dimensions=[
+                {'Name': 'Language', 'Value': language},
+                {'Name': 'Success', 'Value': 'False'}
+            ]
+        )
         raise HTTPException(
             status_code=499,  # Client Closed Request
             detail="Request cancelled due to barge-in"
         )
     except asyncio.TimeoutError:
         logger.exception("Voice request %s timed out", request_id)
+        await cloudwatch_service.put_metric(
+            'APIErrors', 1,
+            dimensions=[
+                {'Name': 'ErrorType', 'Value': 'TimeoutError'},
+                {'Name': 'Endpoint', 'Value': 'voice'}
+            ]
+        )
         raise HTTPException(
             status_code=status.HTTP_504_GATEWAY_TIMEOUT,
             detail="Voice processing timed out",
         )
     except HTTPException:
+        await cloudwatch_service.put_metric(
+            'APIErrors', 1,
+            dimensions=[
+                {'Name': 'ErrorType', 'Value': 'HTTPException'},
+                {'Name': 'Endpoint', 'Value': 'voice'}
+            ]
+        )
         raise
-    except Exception:
+    except Exception as e:
         logger.exception("Voice request %s failed unexpectedly", request_id)
+        await cloudwatch_service.put_metric(
+            'APIErrors', 1,
+            dimensions=[
+                {'Name': 'ErrorType', 'Value': type(e).__name__},
+                {'Name': 'Endpoint', 'Value': 'voice'}
+            ]
+        )
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Voice processing failed",

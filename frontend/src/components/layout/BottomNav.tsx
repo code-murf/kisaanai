@@ -3,44 +3,45 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { Home, Map, BarChart3, Mic, Settings } from "lucide-react"
+import { useTranslation } from "@/hooks/useTranslation"
 
 import { cn } from "@/lib/utils"
-// import { Button } from "@/components/ui/button" // might use for the mic button
 
 export function BottomNav() {
   const pathname = usePathname()
+  const { t } = useTranslation()
 
   const navItems = [
     {
-      label: "Home",
+      label: t("nav.home"),
       href: "/",
       icon: Home,
     },
     {
-      label: "Mandi",
+      label: t("nav.mandi"),
       href: "/mandi",
       icon: Map,
     },
     {
-      label: "Voice",
+      label: t("nav.voice"),
       href: "/voice",
       icon: Mic,
       isFloating: true,
     },
     {
-      label: "Charts",
+      label: t("nav.charts"),
       href: "/charts",
       icon: BarChart3,
     },
     {
-      label: "Settings",
+      label: t("nav.settings"),
       href: "/settings",
       icon: Settings,
     },
   ]
 
   return (
-    <div className="fixed bottom-0 left-0 z-50 w-full border-t bg-background/80 backdrop-blur-lg supports-[backdrop-filter]:bg-background/60 md:hidden">
+    <div className="fixed bottom-0 left-0 z-50 w-full border-t bg-background/80 backdrop-blur-lg supports-[backdrop-filter]:bg-background/60">
       <div className="flex h-16 items-center justify-around px-2">
         {navItems.map((item) => {
           const isActive = pathname === item.href
@@ -61,7 +62,7 @@ export function BottomNav() {
               key={item.href}
               href={item.href}
               className={cn(
-                "flex flex-col items-center justify-center gap-1 rounded-lg px-2 py-1 text-xs font-medium transition-colors hover:bg-muted focus:bg-muted active:bg-muted",
+                "flex flex-col items-center justify-center gap-1 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors hover:bg-muted focus:bg-muted active:bg-muted",
                 isActive
                   ? "text-primary"
                   : "text-muted-foreground hover:text-foreground"

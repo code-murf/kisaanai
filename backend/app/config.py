@@ -35,6 +35,8 @@ class Settings(BaseSettings):
     
     # Redis
     REDIS_URL: str = "redis://localhost:6379/0"
+    REDIS_SOCKET_CONNECT_TIMEOUT_SECONDS: float = 0.1
+    REDIS_SOCKET_TIMEOUT_SECONDS: float = 0.1
     CACHE_EXPIRY_SECONDS: int = 300  # 5 minutes
     
     # Security

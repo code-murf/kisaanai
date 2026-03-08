@@ -3,7 +3,7 @@
  * Handles all HTTP requests with proper error handling and token management
  */
 
-const API_BASE_URL = `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/api/v1`
+const API_BASE_URL = `/api/v1`
 
 type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE"
 
@@ -199,9 +199,19 @@ export const alertApi = {
     mandi_id?: number
     target_price: number
     condition: "above" | "below"
-  }) => Promise.reject(new ApiError("Alerts endpoint is not available in this backend build", 501)),
-  delete: (id: number) => Promise.reject(new ApiError("Alerts endpoint is not available in this backend build", 501)),
-  update: (id: number, data: any) => Promise.reject(new ApiError("Alerts endpoint is not available in this backend build", 501)),
+  }) => {
+    void data
+    return Promise.reject(new ApiError("Alerts endpoint is not available in this backend build", 501))
+  },
+  delete: (id: number) => {
+    void id
+    return Promise.reject(new ApiError("Alerts endpoint is not available in this backend build", 501))
+  },
+  update: (id: number, data: any) => {
+    void id
+    void data
+    return Promise.reject(new ApiError("Alerts endpoint is not available in this backend build", 501))
+  },
 }
 
 export { ApiError }

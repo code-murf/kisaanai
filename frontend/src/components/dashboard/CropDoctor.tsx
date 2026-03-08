@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Sprout, Beaker, Upload, X, AlertTriangle } from "lucide-react"
+import Image from "next/image"
 
 interface Recommendation {
   crop_name: string
@@ -40,7 +41,7 @@ export function CropDoctor() {
         location: "Delhi"
       })
       
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/v1/crops/recommend?${query}`)
+      const res = await fetch(`/api/v1/crops/recommend?${query}`)
       if (!res.ok) throw new Error("Failed to fetch")
       const data = await res.json()
       setRecommendations(data)
@@ -75,7 +76,7 @@ export function CropDoctor() {
         const formData = new FormData()
         formData.append("file", selectedFile)
 
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/v1/diseases/diagnose`, {
+        const res = await fetch(`/api/v1/diseases/diagnose`, {
             method: "POST",
             body: formData
         })
@@ -184,7 +185,14 @@ export function CropDoctor() {
                  </div>
                ) : (
                  <div className="relative">
-                    <img src={image} alt="Uploaded leaf" className="max-h-64 mx-auto rounded-lg shadow-md" />
+                    <Image
+                        src={image}
+                        alt="Uploaded leaf"
+                        width={640}
+                        height={640}
+                        unoptimized
+                        className="max-h-64 w-auto mx-auto rounded-lg shadow-md"
+                    />
                     <Button 
                         size="icon" 
                         variant="destructive" 

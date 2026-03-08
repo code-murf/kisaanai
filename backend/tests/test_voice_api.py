@@ -694,41 +694,44 @@ class TestVoiceAPIIntegration:
         """Test concurrent sessions for different users."""
         results = []
         audio_bytes = mock_audio_file.getvalue()
+        session_to_user = {}
+
+        # Use one shared AI mock to avoid race conditions from per-task patching.
+        shared_ai_service = MagicMock()
+        shared_ai_service.transcribe_audio = AsyncMock(return_value="query")
+        shared_ai_service.process_voice_query = AsyncMock(
+            side_effect=lambda transcribed_text, language, lat, lon, session_id=None: {
+                "response": f"response for user {session_to_user.get(session_id)}"
+            }
+        )
+        shared_ai_service.text_to_speech = AsyncMock(return_value="audio")
 
         async def user_session(user_id):
-            # Create session for user
-            mock_user = User(id=user_id, email=f"user{user_id}@test.com", hashed_password="x", is_active=True)
+            # Create session directly for this user to avoid auth patch collisions.
+            session_id = get_session_manager().create_session(user_id=str(user_id))
+            session_to_user[session_id] = user_id
             
-            with patch("app.api.voice.get_current_user", return_value=mock_user):
-                session_resp = await client.post("/voice/session", headers={"Authorization": "Bearer token"})
-                session_id = session_resp.json()["session_id"]
-
             # Make voice query
-            mock_ai_service = MagicMock()
-            mock_ai_service.transcribe_audio = AsyncMock(return_value=f"query from user {user_id}")
-            mock_ai_service.process_voice_query = AsyncMock(return_value={"response": f"response for user {user_id}"})
-            mock_ai_service.text_to_speech = AsyncMock(return_value="audio")
-
-            with patch("app.api.voice.get_ai_service", return_value=mock_ai_service):
-                query_resp = await client.post(
-                    "/voice/query",
-                    files={"file": ("test.wav", io.BytesIO(audio_bytes), "audio/wav")},
-                    data={"session_id": session_id}
-                )
+            query_resp = await client.post(
+                "/voice/query",
+                files={"file": ("test.wav", io.BytesIO(audio_bytes), "audio/wav")},
+                data={"session_id": session_id}
+            )
 
             results.append({
                 "user_id": user_id,
                 "session_id": session_id,
                 "status": query_resp.status_code,
-                "query": query_resp.json().get("query") if query_resp.status_code == 200 else None
+                "response": query_resp.json().get("response") if query_resp.status_code == 200 else None,
             })
 
-        # Run concurrent sessions
-        tasks = [asyncio.create_task(user_session(i)) for i in range(5)]
-        await asyncio.gather(*tasks)
+        with patch("app.api.voice.get_ai_service", return_value=shared_ai_service):
+            # Run concurrent sessions
+            tasks = [asyncio.create_task(user_session(i)) for i in range(5)]
+            await asyncio.gather(*tasks)
 
         # All should succeed
         assert len(results) == 5
         for result in results:
             assert result["status"] == 200
-            assert f"user {result['user_id']}" in result["query"]
+            assert f"user {result['user_id']}" in result["response"]

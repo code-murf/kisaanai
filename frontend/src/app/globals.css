@@ -191,4 +191,107 @@
     transform: translateY(0);
     }
   }
+  --animate-shine: shine var(--duration) infinite linear
+;
+  @keyframes shine {
+  0% {
+    background-position: 0% 0%;
+    }
+  50% {
+    background-position: 100% 100%;
+    }
+  to {
+    background-position: 0% 0%;
+    }
+  }}
+.dashboard-ambient-orb {
+  position: absolute;
+  z-index: 0;
+  border-radius: 9999px;
+  filter: blur(18px);
+  mix-blend-mode: screen;
+  will-change: transform, opacity;
+}
+
+.dashboard-ambient-orb--a {
+  top: 7%;
+  left: -6%;
+  width: 24rem;
+  height: 24rem;
+  opacity: 0.42;
+  background: radial-gradient(circle at 35% 35%, rgba(52, 211, 153, 0.72), rgba(16, 185, 129, 0.08) 70%);
+  animation: dashboard-float-a 18s ease-in-out infinite;
+}
+
+.dashboard-ambient-orb--b {
+  right: -4%;
+  bottom: 8%;
+  width: 20rem;
+  height: 20rem;
+  opacity: 0.32;
+  background: radial-gradient(circle at 40% 40%, rgba(34, 211, 238, 0.6), rgba(14, 116, 144, 0.08) 72%);
+  animation: dashboard-float-b 20s ease-in-out infinite;
+}
+
+.dashboard-shimmer-band {
+  position: absolute;
+  top: 18%;
+  left: 12%;
+  z-index: 0;
+  width: min(70vw, 42rem);
+  height: 13rem;
+  border-radius: 9999px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.22), transparent);
+  filter: blur(26px);
+  opacity: 0.22;
+  transform: rotate(-14deg);
+  animation: dashboard-shimmer 14s ease-in-out infinite;
+  will-change: transform, opacity;
+}
+
+@keyframes dashboard-float-a {
+  0%, 100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(28px, -22px, 0) scale(1.08);
+  }
+}
+
+@keyframes dashboard-float-b {
+  0%, 100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(-26px, 24px, 0) scale(1.06);
+  }
+}
+
+@keyframes dashboard-shimmer {
+  0%, 100% {
+    transform: rotate(-14deg) translate3d(-20px, -22px, 0);
+    opacity: 0.16;
+  }
+  50% {
+    transform: rotate(-10deg) translate3d(28px, 38px, 0);
+    opacity: 0.32;
+  }
+}
+
+@media (max-width: 768px) {
+  .dashboard-ambient-orb--a {
+    width: 17rem;
+    height: 17rem;
+  }
+
+  .dashboard-ambient-orb--b {
+    width: 14rem;
+    height: 14rem;
+  }
+
+  .dashboard-shimmer-band {
+    left: -8%;
+    width: 90vw;
+    height: 10rem;
+  }
 }

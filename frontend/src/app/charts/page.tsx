@@ -4,6 +4,9 @@ import { useEffect, useMemo, useState } from "react"
 import { TrendingUp, TrendingDown, Calendar, Download, Info } from "lucide-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Skeleton } from "@/components/ui/skeleton"
+import { useTranslation } from "@/hooks/useTranslation"
 import {
   Area,
   AreaChart,
@@ -25,8 +28,7 @@ const timeRanges = [
   { label: "1Y", value: "1y", days: 365 },
 ]
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
-const DEFAULT_COMMODITY_ID = Number(process.env.NEXT_PUBLIC_DEFAULT_COMMODITY_ID || "2")
+const API_BASE_URL = ""
 const DEFAULT_MANDI_ID = Number(process.env.NEXT_PUBLIC_DEFAULT_MANDI_ID || "1")
 
 interface TrendPoint {
@@ -50,6 +52,11 @@ interface MandiPricePoint {
   arrival: number
 }
 
+interface Commodity {
+  id: number
+  name: string
+}
+
 function formatDate(rawDate: string): string {
   return new Date(rawDate).toLocaleDateString("en-US", { day: "numeric", month: "short" })
 }
@@ -68,11 +75,36 @@ export default function ChartsPage() {
   const [mandiName, setMandiName] = useState(`Mandi ${DEFAULT_MANDI_ID}`)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [commodities, setCommodities] = useState<Commodity[]>([])
+  const [selectedCommodityId, setSelectedCommodityId] = useState<number>(
+    Number(process.env.NEXT_PUBLIC_DEFAULT_COMMODITY_ID || "2")
+  )
+  const { t } = useTranslation()
 
   const selectedDays = useMemo(
     () => timeRanges.find((range) => range.value === timeRange)?.days ?? 7,
     [timeRange]
   )
+
+  // Fetch commodities list on mount
+  useEffect(() => {
+    async function fetchCommodities() {
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/v1/commodities`)
+        if (res.ok) {
+          const data = await res.json()
+          const items: Commodity[] = (data.items || data || []).map((c: Record<string, unknown>) => ({
+            id: Number(c.id),
+            name: String(c.name || ""),
+          }))
+          if (items.length > 0) setCommodities(items)
+        }
+      } catch {
+        // Keep empty — selector will be hidden
+      }
+    }
+    fetchCommodities()
+  }, [])
 
   useEffect(() => {
     let cancelled = false
@@ -82,10 +114,10 @@ export default function ChartsPage() {
       setError(null)
       try {
         const [trendRes, currentRes, forecastRes] = await Promise.all([
-          fetch(`${API_BASE_URL}/api/v1/prices/trend/${DEFAULT_COMMODITY_ID}?days=${selectedDays}`),
-          fetch(`${API_BASE_URL}/api/v1/prices/current/commodity/${DEFAULT_COMMODITY_ID}?limit=8`),
+          fetch(`${API_BASE_URL}/api/v1/prices/trend/${selectedCommodityId}?days=${selectedDays}`),
+          fetch(`${API_BASE_URL}/api/v1/prices/current/commodity/${selectedCommodityId}?limit=8`),
           fetch(
-            `${API_BASE_URL}/api/v1/forecasts/${DEFAULT_COMMODITY_ID}/${DEFAULT_MANDI_ID}/multi-horizon?horizons=1,3,7,14,30`
+            `${API_BASE_URL}/api/v1/forecasts/${selectedCommodityId}/${DEFAULT_MANDI_ID}/multi-horizon?horizons=1,3,7,14,30`
           ),
         ])
 
@@ -108,16 +140,21 @@ export default function ChartsPage() {
           }))
           .reverse()
 
-        const parsedMandiComparison: MandiPricePoint[] = currentJson.slice(0, 8).map((item) => ({
-          name: String(item.mandi_name ?? "Unknown"),
-          price: Number(item.modal_price ?? 0),
-          arrival: Number(item.arrival_qty ?? 0),
-        }))
+        const parsedMandiComparison: MandiPricePoint[] = currentJson.slice(0, 8).map((item) => {
+          const mandi = item.mandi as Record<string, unknown> | undefined
+          return {
+            name: String(item.mandi_name ?? mandi?.name ?? "Unknown"),
+            price: Number(item.modal_price ?? 0),
+            arrival: Number(item.arrival_qty ?? 0),
+          }
+        })
 
         const currentFirst = currentJson[0]
         if (currentFirst) {
-          const nextCommodityName = String(currentFirst.commodity_name ?? "").trim()
-          const nextMandiName = String(currentFirst.mandi_name ?? "").trim()
+          const commodity = currentFirst.commodity as Record<string, unknown> | undefined
+          const mandi = currentFirst.mandi as Record<string, unknown> | undefined
+          const nextCommodityName = String(currentFirst.commodity_name ?? commodity?.name ?? "").trim()
+          const nextMandiName = String(currentFirst.mandi_name ?? mandi?.name ?? "").trim()
           if (nextCommodityName) setCommodityName(nextCommodityName)
           if (nextMandiName) setMandiName(nextMandiName)
         }
@@ -172,7 +209,7 @@ export default function ChartsPage() {
     return () => {
       cancelled = true
     }
-  }, [selectedDays])
+  }, [selectedDays, selectedCommodityId])
 
   const currentPrice = trendData.length > 0 ? trendData[trendData.length - 1].modal_price : 0
   const previousPrice = trendData.length > 0 ? trendData[0].modal_price : 0
@@ -193,6 +230,37 @@ export default function ChartsPage() {
       trendData.reduce((sum, point) => sum + (point.modal_price - averagePrice) ** 2, 0) / trendData.length
     return (Math.sqrt(variance) / averagePrice) * 100
   })()
+
+  // Compute Y-axis domain with 10% padding so price line is clearly visible
+  const trendYDomain = useMemo(() => {
+    if (trendData.length === 0) return [0, 100]
+    const prices = trendData.map((p) => p.modal_price).filter((v) => v > 0)
+    if (prices.length === 0) return [0, 100]
+    const min = Math.min(...prices)
+    const max = Math.max(...prices)
+    const padding = Math.max((max - min) * 0.15, 50)
+    return [Math.floor(min - padding), Math.ceil(max + padding)]
+  }, [trendData])
+
+  const forecastYDomain = useMemo(() => {
+    if (forecastData.length === 0) return [0, 100]
+    const allValues = forecastData.flatMap((p) => [p.price, p.lower, p.upper]).filter((v) => v > 0)
+    if (allValues.length === 0) return [0, 100]
+    const min = Math.min(...allValues)
+    const max = Math.max(...allValues)
+    const padding = Math.max((max - min) * 0.15, 50)
+    return [Math.floor(min - padding), Math.ceil(max + padding)]
+  }, [forecastData])
+
+  const comparisonYDomain = useMemo(() => {
+    if (mandiComparisonData.length === 0) return [0, 100]
+    const prices = mandiComparisonData.map((p) => p.price).filter((v) => v > 0)
+    if (prices.length === 0) return [0, 100]
+    const min = Math.min(...prices)
+    const max = Math.max(...prices)
+    const padding = Math.max((max - min) * 0.15, 50)
+    return [Math.floor(min - padding), Math.ceil(max + padding)]
+  }, [mandiComparisonData])
 
   const exportTrendData = () => {
     if (trendData.length === 0) return
@@ -242,9 +310,28 @@ export default function ChartsPage() {
     <div className="flex flex-col gap-6 p-4 md:p-8 pb-20">
       <header className="flex flex-col gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Price Analytics</h1>
-          <p className="text-muted-foreground">Historical trends and forecasts for {commodityName}</p>
+          <h1 className="text-2xl font-bold tracking-tight">{t("charts.title")}</h1>
+          <p className="text-muted-foreground">{t("charts.subtitle")} {t("entities." + commodityName)}</p>
         </div>
+
+        {/* Commodity Selector */}
+        {commodities.length > 0 && (
+          <Select
+            value={String(selectedCommodityId)}
+            onValueChange={(val) => setSelectedCommodityId(Number(val))}
+          >
+            <SelectTrigger className="w-[240px]">
+              <SelectValue placeholder="Select commodity" />
+            </SelectTrigger>
+            <SelectContent>
+              {commodities.map((c) => (
+                <SelectItem key={c.id} value={String(c.id)}>
+                  {c.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
 
         <div className="flex gap-2 overflow-x-auto pb-2">
           {timeRanges.map((range) => (
@@ -262,23 +349,28 @@ export default function ChartsPage() {
 
       {error && <p className="text-sm text-red-600">{error}</p>}
 
+      {/* Summary Cards with Skeletons */}
       <section className="grid gap-4 md:grid-cols-3">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Current Price</CardTitle>
+            <CardTitle className="text-sm font-medium">{t("charts.currentPrice")}</CardTitle>
             <TrendingUp className="h-4 w-4 text-green-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
-              {loading ? "Loading..." : currentPrice > 0 ? formatCurrency(currentPrice) : "No data"}
-            </div>
-            <p className="text-xs text-muted-foreground">per quintal</p>
+            {loading ? (
+              <Skeleton className="h-8 w-32" />
+            ) : (
+              <div className="text-2xl font-bold">
+                {currentPrice > 0 ? formatCurrency(currentPrice) : t("charts.noData")}
+              </div>
+            )}
+            <p className="text-xs text-muted-foreground">{t("charts.perQuintal")}</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Price Change</CardTitle>
+            <CardTitle className="text-sm font-medium">{t("charts.priceChange")}</CardTitle>
             {priceChange >= 0 ? (
               <TrendingUp className="h-4 w-4 text-green-500" />
             ) : (
@@ -286,13 +378,15 @@ export default function ChartsPage() {
             )}
           </CardHeader>
           <CardContent>
-            <div className={`text-2xl font-bold ${priceChange >= 0 ? "text-green-500" : "text-red-500"}`}>
-              {loading
-                ? "Loading..."
-                : previousPrice > 0
+            {loading ? (
+              <Skeleton className="h-8 w-24" />
+            ) : (
+              <div className={`text-2xl font-bold ${priceChange >= 0 ? "text-green-500" : "text-red-500"}`}>
+                {previousPrice > 0
                   ? `${priceChange > 0 ? "+" : ""}${priceChange.toFixed(1)}%`
-                  : "No data"}
-            </div>
+                  : t("charts.noData")}
+              </div>
+            )}
             <p className="text-xs text-muted-foreground">
               vs {timeRanges.find((r) => r.value === timeRange)?.label}
             </p>
@@ -301,12 +395,16 @@ export default function ChartsPage() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Best Day to Sell</CardTitle>
+            <CardTitle className="text-sm font-medium">{t("charts.bestDayToSell")}</CardTitle>
             <Calendar className="h-4 w-4 text-primary" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{loading ? "Loading..." : bestSellDate}</div>
-            <p className="text-xs text-muted-foreground">Based on live historical data</p>
+            {loading ? (
+              <Skeleton className="h-8 w-28" />
+            ) : (
+              <div className="text-2xl font-bold">{bestSellDate}</div>
+            )}
+            <p className="text-xs text-muted-foreground">{t("charts.basedOnHistory")}</p>
           </CardContent>
         </Card>
       </section>
@@ -324,14 +422,14 @@ export default function ChartsPage() {
           size="sm"
           onClick={() => setChartType("forecast")}
         >
-          AI Forecast
+          {t("charts.aiForecast")}
         </Button>
         <Button
           variant={chartType === "comparison" ? "default" : "outline"}
           size="sm"
           onClick={() => setChartType("comparison")}
         >
-          Mandi Comparison
+          {t("charts.mandiComparison")}
         </Button>
       </div>
 
@@ -340,23 +438,23 @@ export default function ChartsPage() {
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle>Price History</CardTitle>
-                <CardDescription>Daily price movement over selected period</CardDescription>
+                <CardTitle>{t("charts.priceHistory")}</CardTitle>
+                <CardDescription>{t("charts.dailyMovement")}</CardDescription>
               </div>
               <Button size="sm" variant="outline" disabled={trendData.length === 0} onClick={exportTrendData}>
                 <Download className="mr-2 h-4 w-4" />
-                Export
+                {t("charts.export")}
               </Button>
             </div>
           </CardHeader>
           <CardContent>
             {loading ? (
-              <div className="flex h-[350px] items-center justify-center text-sm text-muted-foreground">
-                Loading chart data...
+              <div className="space-y-3">
+                <Skeleton className="h-[350px] w-full rounded-lg" />
               </div>
             ) : trendData.length === 0 ? (
               <div className="flex h-[350px] items-center justify-center text-sm text-muted-foreground">
-                No trend data available.
+                {t("charts.noTrend")}
               </div>
             ) : (
               <ResponsiveContainer width="100%" height={350}>
@@ -374,6 +472,7 @@ export default function ChartsPage() {
                     fontSize={12}
                     tickLine={false}
                     axisLine={false}
+                    domain={trendYDomain}
                     tickFormatter={(value: number) => formatCurrency(value)}
                   />
                   <Tooltip content={<CustomTooltip />} />
@@ -397,8 +496,8 @@ export default function ChartsPage() {
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle>AI Price Forecast</CardTitle>
-                <CardDescription>Multi-horizon prediction with confidence interval</CardDescription>
+                <CardTitle>{t("charts.aiForecast")}</CardTitle>
+                <CardDescription>{t("charts.forecastDesc")}</CardDescription>
               </div>
               <Button size="icon" variant="outline">
                 <Info className="h-4 w-4" />
@@ -407,12 +506,10 @@ export default function ChartsPage() {
           </CardHeader>
           <CardContent>
             {loading ? (
-              <div className="flex h-[350px] items-center justify-center text-sm text-muted-foreground">
-                Loading forecast...
-              </div>
+              <Skeleton className="h-[350px] w-full rounded-lg" />
             ) : forecastData.length === 0 ? (
               <div className="flex h-[350px] items-center justify-center text-sm text-muted-foreground">
-                Forecast unavailable for commodity {DEFAULT_COMMODITY_ID} at {mandiName}.
+                Forecast unavailable for commodity {selectedCommodityId} at {mandiName}.
               </div>
             ) : (
               <>
@@ -435,6 +532,7 @@ export default function ChartsPage() {
                       fontSize={12}
                       tickLine={false}
                       axisLine={false}
+                      domain={forecastYDomain}
                       tickFormatter={(value: number) => formatCurrency(value)}
                     />
                     <Tooltip content={<CustomTooltip />} />
@@ -472,7 +570,7 @@ export default function ChartsPage() {
                   </AreaChart>
                 </ResponsiveContainer>
                 <div className="mt-4 rounded-lg bg-muted/50 p-4">
-                  <p className="mb-2 text-sm font-medium">Forecast Context</p>
+                  <p className="mb-2 text-sm font-medium">{t("charts.forecastContext")}</p>
                   <p className="text-sm text-muted-foreground">
                     Multi-horizon model forecast for {commodityName} at {mandiName}.
                   </p>
@@ -486,17 +584,15 @@ export default function ChartsPage() {
       {chartType === "comparison" && (
         <Card>
           <CardHeader>
-            <CardTitle>Mandi Price Comparison</CardTitle>
-            <CardDescription>Compare prices across nearby mandis</CardDescription>
+            <CardTitle>{t("charts.mandiComparison")}</CardTitle>
+            <CardDescription>{t("charts.compareDesc")}</CardDescription>
           </CardHeader>
           <CardContent>
             {loading ? (
-              <div className="flex h-[350px] items-center justify-center text-sm text-muted-foreground">
-                Loading mandi comparison...
-              </div>
+              <Skeleton className="h-[350px] w-full rounded-lg" />
             ) : mandiComparisonData.length === 0 ? (
               <div className="flex h-[350px] items-center justify-center text-sm text-muted-foreground">
-                No live mandi prices available.
+                {t("charts.noMandiPrices")}
               </div>
             ) : (
               <ResponsiveContainer width="100%" height={350}>
@@ -508,6 +604,7 @@ export default function ChartsPage() {
                     fontSize={12}
                     tickLine={false}
                     axisLine={false}
+                    domain={comparisonYDomain}
                     tickFormatter={(value: number) => formatCurrency(value)}
                   />
                   <Tooltip content={<CustomTooltip />} />
@@ -522,29 +619,29 @@ export default function ChartsPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Price Statistics</CardTitle>
+          <CardTitle>{t("charts.priceStats")}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
             <div>
               <p className="text-sm text-muted-foreground">
-                Highest ({timeRanges.find((r) => r.value === timeRange)?.label})
+                {t("charts.highest")} ({timeRanges.find((r) => r.value === timeRange)?.label})
               </p>
-              <p className="text-xl font-bold">{highestPrice > 0 ? formatCurrency(highestPrice) : "No data"}</p>
+              <p className="text-xl font-bold">{highestPrice > 0 ? formatCurrency(highestPrice) : t("charts.noData")}</p>
             </div>
             <div>
               <p className="text-sm text-muted-foreground">
-                Lowest ({timeRanges.find((r) => r.value === timeRange)?.label})
+                {t("charts.lowest")} ({timeRanges.find((r) => r.value === timeRange)?.label})
               </p>
-              <p className="text-xl font-bold">{lowestPrice > 0 ? formatCurrency(lowestPrice) : "No data"}</p>
+              <p className="text-xl font-bold">{lowestPrice > 0 ? formatCurrency(lowestPrice) : t("charts.noData")}</p>
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">Average</p>
-              <p className="text-xl font-bold">{averagePrice > 0 ? formatCurrency(averagePrice) : "No data"}</p>
+              <p className="text-sm text-muted-foreground">{t("charts.average")}</p>
+              <p className="text-xl font-bold">{averagePrice > 0 ? formatCurrency(averagePrice) : t("charts.noData")}</p>
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">Volatility</p>
-              <p className="text-xl font-bold">{trendData.length > 0 ? `${volatility.toFixed(1)}%` : "No data"}</p>
+              <p className="text-sm text-muted-foreground">{t("charts.volatility")}</p>
+              <p className="text-xl font-bold">{trendData.length > 0 ? `${volatility.toFixed(1)}%` : t("charts.noData")}</p>
             </div>
           </div>
         </CardContent>
