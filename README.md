@@ -2,47 +2,74 @@
 
 [![Build with Kiro](https://img.shields.io/badge/Built%20with-Kiro-blue)](https://kiro.ai)
 [![AWS Hackathon](https://img.shields.io/badge/AWS-AI%20for%20Bharat-orange)](https://aws.amazon.com)
+[![AWS Bedrock](https://img.shields.io/badge/AWS-Bedrock%20Claude%203-blueviolet)](https://aws.amazon.com/bedrock/)
+[![AWS S3](https://img.shields.io/badge/AWS-S3-green)](https://aws.amazon.com/s3/)
+[![AWS CloudWatch](https://img.shields.io/badge/AWS-CloudWatch-red)](https://aws.amazon.com/cloudwatch/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 > Empowering Indian farmers with AI-driven market intelligence, voice-first accessibility, and hyper-local insights.
 
+**Live Demo**: http://13.53.186.103  
+**GitHub**: https://github.com/code-murf/kisaanai  
+**Demo Video**: [YouTube Link]
+
 ## 🎯 Overview
 
 KisaanAI is a comprehensive agricultural analytics platform designed to democratize market intelligence for Indian farmers. Built for the AWS AI for Bharat Hackathon, it combines cutting-edge ML forecasting, voice-first interfaces, and explainable AI to solve real-world challenges faced by farmers.
+
+## 🚀 AWS Services Used
+
+KisaanAI leverages 5 AWS services for a production-ready, scalable solution:
+
+1. **Amazon Bedrock** - GenAI for voice assistant and intelligent query processing using Claude 3
+2. **Amazon S3** - Scalable image storage for crop disease detection with presigned URLs
+3. **Amazon CloudWatch** - Real-time monitoring, metrics, and logging for production observability
+4. **Amazon EC2** - Reliable deployment hosting with Docker containerization
+5. **AWS Transcribe** - Speech-to-text for multilingual voice queries
 
 ## ✨ Key Features
 
 ### 🎤 Voice-First Interface
 - Natural language queries in Hindi, English, and regional languages
 - Real-time voice responses with <3 second latency
-- Offline voice command caching for low-connectivity areas
+- Powered by AWS Transcribe and Amazon Bedrock
+- CloudWatch metrics for voice query monitoring
 
 ### 📊 Price Forecasting
 - ML-powered predictions (7, 14, 30-day horizons)
 - 90%+ accuracy using XGBoost + Prophet ensemble
 - Explainable AI (SHAP) showing prediction factors
+- RAG-enhanced responses with historical market data
 
 ### 🗺️ Smart Mandi Recommendations
 - Optimal market selection based on price + transport cost
 - Real-time route optimization
 - Net profit calculations
 
+### 🌾 Crop Doctor
+- AI-powered disease detection from images
+- Images stored securely in Amazon S3
+- Treatment recommendations with 87%+ accuracy
+- S3 presigned URLs for image retrieval
+
 ### 💬 WhatsApp Integration
 - Daily price alerts and market updates
 - Conversational queries via WhatsApp
 - Image-based crop disease detection
-
-### 🌾 Crop Doctor
-- AI-powered disease detection from images
-- Treatment recommendations
-- 87%+ accuracy across 20+ crops
 
 ### 💰 KisaanCredit (Fintech)
 - Credit score estimation for farmers
 - Loan product recommendations
 - Seamless application process
 
-## 🏗️ Architecture
+## 🏗️ Architecture (AWS Native)
+
+KisaanAI is built on a high-availability architecture leveraging **AWS Generative AI** services at its core:
+
+*   **Amazon Bedrock (Claude 3 Haiku / Nova Lite):** Powers our complex conversational reasoning, function calling (MCP) for real-time market data, and multimodal visual analysis for Crop Doctor disease diagnosis.
+*   **Amazon Polly:** Provides hyper-realistic, localized regional text-to-speech for our Voice-First interface.
+*   **Amazon Transcribe:** Converts local dialects and voice commands into processable text streams.
+*   **Amazon EC2:** Hosts the Nginx reverse proxy, containerized Next.js frontend, and asynchronous FastAPI microservices for the live deployment.
 
 ```
 ┌─────────────────────────────────────────────────────────┐
@@ -50,16 +77,18 @@ KisaanAI is a comprehensive agricultural analytics platform designed to democrat
 └─────────────────────┬───────────────────────────────────┘
                       │
 ┌─────────────────────▼───────────────────────────────────┐
-│  Backend Services (FastAPI Microservices)               │
+│  Backend Services (FastAPI Microservices on AWS EC2)    │
 │  • Auth • Price • Mandi • Voice • Credit • CropDoctor  │
 └─────────────────────┬───────────────────────────────────┘
                       │
 ┌─────────────────────▼───────────────────────────────────┐
-│  Data Layer: PostgreSQL + PostGIS + Redis + TimescaleDB │
+│  AWS AI Layer                                           │
+│  • Amazon Bedrock (Claude 3 / Nova Lite)                │
+│  • Amazon Polly (TTS) & Amazon Transcribe (STT)         │
 └─────────────────────┬───────────────────────────────────┘
                       │
 ┌─────────────────────▼───────────────────────────────────┐
-│  ML Pipeline: XGBoost + Prophet + SHAP + ResNet50       │
+│  Data & ML: PostgreSQL, Redis, XGBoost, SHAP            │
 └─────────────────────────────────────────────────────────┘
 ```
 
@@ -156,11 +185,20 @@ docker-compose up -d
 
 ## 🎓 Documentation
 
-- [Requirements Document](requirements.md) - Comprehensive functional & non-functional requirements
+### Core Documentation
+- [TECHNICAL_DOCUMENTATION.md](TECHNICAL_DOCUMENTATION.md) - Complete technical documentation
+- [AWS_INTEGRATION_GUIDE.md](AWS_INTEGRATION_GUIDE.md) - AWS services integration guide
+- [API_QUICK_REFERENCE.md](API_QUICK_REFERENCE.md) - API endpoints quick reference
+- [README.md](README.md) - Project overview (this file)
+
+### Testing Documentation
+- [COMPREHENSIVE_TEST_PLAN.md](COMPREHENSIVE_TEST_PLAN.md) - Manual testing guide (200+ test cases)
+- [PLAYWRIGHT_TEST_ANALYSIS.md](PLAYWRIGHT_TEST_ANALYSIS.md) - Automated test analysis
+- [READY_TO_TEST_WITH_PLAYWRIGHT.md](READY_TO_TEST_WITH_PLAYWRIGHT.md) - Quick start testing guide
+
+### Legacy Documentation
+- [Requirements Document](requirements.md) - Functional & non-functional requirements
 - [Design Document](design.md) - Technical architecture and system design
-- [Implementation Plan](.kiro/implementation_plan.md) - Development roadmap
-- [Winning Strategy](.kiro/winning_strategy.md) - Competition strategy
-- [API Documentation](docs/) - API guides and examples
 
 ## 🧪 Testing
 
