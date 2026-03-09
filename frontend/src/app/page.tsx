@@ -18,7 +18,7 @@ export default function Home() {
       <div className="dashboard-ambient-orb dashboard-ambient-orb--b" />
       <div className="dashboard-shimmer-band" />
 
-      <div className="relative z-10 flex min-h-screen flex-col items-center px-4 py-4 md:px-12 md:py-12 lg:px-24 lg:py-20">
+      <div className="relative z-10 flex min-h-screen flex-col items-center px-4 py-4 pb-28 md:px-12 md:py-12 md:pb-20 lg:px-24 lg:py-20 lg:pb-24">
         <div className="absolute inset-0 opacity-35">
           <Meteors number={18} />
         </div>

@@ -344,7 +344,7 @@ export default function VoicePage() {
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 1.05 }}
           transition={{ duration: 0.3, ease: "easeInOut" }}
-          className="relative flex flex-col h-[calc(100vh-64px)] w-full overflow-hidden" 
+          className="relative flex h-[calc(100dvh-7rem)] w-full flex-col overflow-hidden md:h-[calc(100dvh-8rem)]" 
           style={{ background: '#05070A' }}
         >
         {/* Top bar with back button */}
@@ -418,7 +418,7 @@ export default function VoicePage() {
         <div className="absolute top-1/2 right-0 w-[70px] h-[181px] -translate-y-1/2 pointer-events-none hidden md:block" style={{ background: 'rgba(24, 25, 53, 0.96)', filter: 'blur(15px)' }} />
         
         {/* Bottom controls */}
-        <div className="absolute bottom-6 w-full flex justify-center z-20">
+        <div className="absolute bottom-24 z-20 flex w-full justify-center md:bottom-28">
              <button
                 onClick={toggleContinuousMode}
                 className="h-16 w-16 flex items-center justify-center rounded-full bg-red-600/90 hover:bg-red-500 transition-transform hover:scale-105 shadow-[0_4px_20px_rgba(220,38,38,0.4)]"
@@ -434,7 +434,7 @@ export default function VoicePage() {
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: -20 }}
         transition={{ duration: 0.3, ease: "easeInOut" }}
-        className="relative flex flex-col h-[calc(100vh-64px)] bg-black overflow-hidden"
+        className="relative flex h-[calc(100dvh-7rem)] flex-col overflow-hidden bg-black md:h-[calc(100dvh-8rem)]"
       >
       {/* ---- Top Bar ---- */}
       <div className="flex items-center justify-between px-5 py-4 z-10">

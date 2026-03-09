@@ -53,7 +53,7 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="flex flex-col gap-6 p-4 md:p-8 pb-24 md:pb-8 max-w-2xl mx-auto">
+    <div className="mx-auto flex max-w-2xl flex-col gap-6 p-4 pb-28 md:p-8 md:pb-16">
       <Toast message={toast || ""} show={!!toast} />
 
       <header className="flex items-center justify-between">

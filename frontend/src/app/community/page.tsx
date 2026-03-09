@@ -5,7 +5,6 @@ import { motion, AnimatePresence } from "framer-motion"
 import { Mic, Square, Play, Pause, Users, Heart, MapPin, Send, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
-import { useTranslation } from "@/hooks/useTranslation"
 import { cn } from "@/lib/utils"
 
 interface AudioNote {
@@ -32,8 +31,6 @@ export default function CommunityPage() {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
   const audioChunksRef = useRef<Blob[]>([])
   const audioRef = useRef<HTMLAudioElement | null>(null)
-  const { t } = useTranslation()
-
   const fetchNotes = async () => {
     try {
       const res = await fetch("/api/v1/community/notes")
@@ -145,7 +142,7 @@ export default function CommunityPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 p-4 md:p-8 flex flex-col items-center">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 p-4 pb-28 md:p-8 md:pb-16 flex flex-col items-center">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}

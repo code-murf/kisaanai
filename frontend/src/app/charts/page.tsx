@@ -307,7 +307,7 @@ export default function ChartsPage() {
   }
 
   return (
-    <div className="flex flex-col gap-6 p-4 md:p-8 pb-20">
+    <div className="flex flex-col gap-6 p-4 pb-28 md:p-8 md:pb-16">
       <header className="flex flex-col gap-4">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">{t("charts.title")}</h1>

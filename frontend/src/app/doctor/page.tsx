@@ -73,7 +73,7 @@ export default function CropDoctor() {
   const isHealthy = result?.disease_name === "Healthy";
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(34,197,94,0.16),_transparent_38%),linear-gradient(180deg,_#f8fafc_0%,_#eefbf3_100%)] dark:bg-slate-950 p-4 md:p-8 flex flex-col items-center">
+    <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(34,197,94,0.16),_transparent_38%),linear-gradient(180deg,_#f8fafc_0%,_#eefbf3_100%)] dark:bg-slate-950 p-4 pb-28 md:p-8 md:pb-16 flex flex-col items-center">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}

@@ -72,7 +72,7 @@ export default function NewsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-neutral-950 p-0 md:p-4 flex flex-col items-center">
+    <div className="min-h-screen bg-neutral-950 p-0 pb-28 md:p-4 md:pb-16 flex flex-col items-center">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}

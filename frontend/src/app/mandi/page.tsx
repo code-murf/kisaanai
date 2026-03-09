@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { MapPin, Navigation, TrendingUp, TrendingDown, Search, Filter, Loader2, AlertCircle } from "lucide-react"
+import { MapPin, Navigation, TrendingUp, TrendingDown, Search, Filter, AlertCircle } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Button } from "@/components/ui/button"
@@ -186,7 +186,7 @@ export default function MandiPage() {
 
   if (loading) {
     return (
-      <div className="flex flex-col gap-6 p-4 md:p-8 pb-20">
+      <div className="flex flex-col gap-6 p-4 pb-28 md:p-8 md:pb-16">
         <div className="space-y-4">
           <Skeleton className="h-8 w-48" />
           <Skeleton className="h-5 w-64" />
@@ -218,7 +218,7 @@ export default function MandiPage() {
   }
 
   return (
-    <div className="flex flex-col gap-6 p-4 md:p-8 pb-20">
+    <div className="flex flex-col gap-6 p-4 pb-28 md:p-8 md:pb-16">
       <header className="flex flex-col gap-4">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">{t("mandi.title")}</h1>
