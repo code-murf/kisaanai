@@ -23,8 +23,6 @@ export const viewport: Viewport = {
   themeColor: "#22c55e",
 };
 
-import { BackgroundMusic } from "@/components/BackgroundMusic";
-
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -35,7 +33,6 @@ export default function RootLayout({
       <body className="antialiased bg-background text-foreground">
         <Providers>
           <ServiceWorkerRegister />
-          <BackgroundMusic />
           <main className="min-h-screen pb-[calc(8rem+env(safe-area-inset-bottom))] md:pb-32">
             {children}
           </main>
